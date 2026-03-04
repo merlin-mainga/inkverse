@@ -4,35 +4,39 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  _: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  try {
+    const { id } = await context.params;
 
-  const manga = await prisma.manga.findUnique({
-    where: { id: id },
-    include: {
-      author: { select: { id: true, name: true, image: true, bio: true } },
-      chapters: { orderBy: { chapterNum: "asc" } },
-      _count: { select: { chapters: true } },
-    },
-  });
+    const manga = await prisma.manga.findUnique({
+      where: { id: id },
+      include: {
+        author: { select: { id: true, name: true, image: true, bio: true } },
+        chapters: { orderBy: { chapterNum: "asc" } },
+        _count: { select: { chapters: true } },
+      },
+    });
 
-  if (!manga) return NextResponse.json({ error: "Không tìm thấy" }, { status: 404 });
+    if (!manga) return NextResponse.json({ error: "Không tìm thấy" }, { status: 404 });
 
-  await prisma.manga.update({ where: { id: id }, data: { views: { increment: 1 } } });
+    await prisma.manga.update({ where: { id: id }, data: { views: { increment: 1 } } });
 
-  return NextResponse.json(manga);
+    return NextResponse.json(manga);
+  } catch (error) {
+    return NextResponse.json({ error: "Lỗi server" }, { status: 500 });
+  }
 }
 
 export async function DELETE(
-  _: NextRequest, 
-  { params }: { params: Promise<{ id: string }> }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
-  const { id } = await params;
+  const { id } = await context.params;
   const manga = await prisma.manga.findUnique({ where: { id: id } });
 
   if (!manga || manga.authorId !== session.user.id) {

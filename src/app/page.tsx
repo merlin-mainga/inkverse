@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 const GENRES = ["Tất cả", "Action", "Fantasy", "Sci-Fi", "Horror", "Romance", "Cyberpunk"];
 
 export default function Home() {
+  const router = useRouter();
   const [mangas, setMangas] = useState([]);
   const [selectedGenre, setSelectedGenre] = useState("Tất cả");
   const [searchQuery, setSearchQuery] = useState("");
@@ -12,7 +13,6 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-const router = useRouter();
   const [showUpload, setShowUpload] = useState(false);
   const [uploadStep, setUploadStep] = useState(1);
   const [dragOver, setDragOver] = useState(false);
@@ -20,9 +20,7 @@ const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
-  useEffect(() => {
-    fetchMangas();
-  }, [selectedGenre, searchQuery]);
+  useEffect(() => { fetchMangas(); }, [selectedGenre, searchQuery]);
 
   async function fetchMangas() {
     const params = new URLSearchParams();
@@ -34,8 +32,7 @@ const router = useRouter();
   }
 
   async function handleAuth() {
-    setLoading(true);
-    setMsg("");
+    setLoading(true); setMsg("");
     try {
       if (authMode === "register") {
         const res = await fetch("/api/auth/register", {
@@ -44,141 +41,180 @@ const router = useRouter();
           body: JSON.stringify(form),
         });
         const data = await res.json();
-        if (res.ok) {
-          setMsg("✅ Đăng ký thành công! Đăng nhập nhé!");
-          setAuthMode("login");
-        } else {
-          setMsg("❌ " + data.error);
-        }
+        if (res.ok) { setMsg("✅ Đăng ký thành công! Hãy đăng nhập."); setAuthMode("login"); }
+        else setMsg("❌ " + data.error);
       } else {
         const { signIn } = await import("next-auth/react");
-        const res = await signIn("credentials", {
-          email: form.email,
-          password: form.password,
-          redirect: false,
-        });
-        if (res?.ok) {
-          setIsLoggedIn(true);
-          setShowAuth(false);
-          setMsg("");
-        } else {
-          setMsg("❌ Email hoặc mật khẩu sai!");
-        }
+        const res = await signIn("credentials", { email: form.email, password: form.password, redirect: false });
+        if (res?.ok) { setIsLoggedIn(true); setShowAuth(false); }
+        else setMsg("❌ Email hoặc mật khẩu sai!");
       }
-    } catch (e) {
-      setMsg("❌ Lỗi kết nối!");
-    }
+    } catch { setMsg("❌ Lỗi kết nối!"); }
     setLoading(false);
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "#e8e0d4", fontFamily: "'Noto Serif', Georgia, serif" }}>
+    <div style={{ minHeight: "100vh", background: "#080808", color: "#f0e6d0", fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600;700&family=Oswald:wght@400;600;700&family=Noto+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #c9411e; border-radius: 2px; }
-        .manga-card { transition: transform 0.3s ease; cursor: pointer; }
-        .manga-card:hover { transform: translateY(-6px) scale(1.02); }
-        .glow-btn { transition: all 0.25s ease; cursor: pointer; border: none; }
-        .glow-btn:hover { box-shadow: 0 0 20px rgba(201,65,30,0.5) !important; transform: translateY(-1px); }
-        .input-field { width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #e8e0d4; font-family: 'Noto Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
-        .input-field:focus { border-color: #c9411e; }
-        .input-field::placeholder { color: rgba(232,224,212,0.3); }
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .modal-box { animation: slideUp 0.3s ease; }
-        .genre-btn { transition: all 0.2s ease; cursor: pointer; border: none; }
-        .upload-zone { transition: all 0.2s ease; }
-        .upload-zone:hover { border-color: #c9411e !important; }
-        .chip-new { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(#c9a84c, #8b6914); border-radius: 2px; }
+        body { background: #080808; }
+
+        .manga-card { transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); cursor: pointer; position: relative; }
+        .manga-card:hover { transform: translateY(-10px); }
+        .manga-card::before { content: ''; position: absolute; inset: -1px; background: linear-gradient(135deg, rgba(201,168,76,0.3), transparent, rgba(201,168,76,0.1)); border-radius: 10px; opacity: 0; transition: opacity 0.3s; z-index: 1; pointer-events: none; }
+        .manga-card:hover::before { opacity: 1; }
+
+        .gold-btn { background: linear-gradient(135deg, #c9a84c, #8b6914, #c9a84c); background-size: 200% auto; transition: all 0.3s ease; cursor: pointer; border: none; animation: shimmer 3s linear infinite; }
+        .gold-btn:hover { background-position: right center; box-shadow: 0 0 30px rgba(201,168,76,0.4), 0 0 60px rgba(201,168,76,0.1); transform: translateY(-2px); }
+        @keyframes shimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+
+        .glass-card { background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); border: 1px solid rgba(201,168,76,0.15); }
+        .input-luxury { width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(201,168,76,0.2); border-radius: 6px; color: #f0e6d0; font-family: 'Inter', sans-serif; font-size: 14px; outline: none; transition: all 0.3s; }
+        .input-luxury:focus { border-color: #c9a84c; background: rgba(201,168,76,0.05); box-shadow: 0 0 20px rgba(201,168,76,0.1); }
+        .input-luxury::placeholder { color: rgba(240,230,208,0.25); }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        @keyframes fadeUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-box { animation: fadeUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+
+        .genre-pill { transition: all 0.25s ease; cursor: pointer; border: none; position: relative; overflow: hidden; }
+        .genre-pill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(201,168,76,0.2), transparent); opacity: 0; transition: opacity 0.3s; }
+        .genre-pill:hover::after { opacity: 1; }
+
+        .hero-line { height: 1px; background: linear-gradient(90deg, transparent, #c9a84c, transparent); }
+        
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+        .float-anim { animation: float 4s ease-in-out infinite; }
+
+        .nav-link { transition: color 0.2s; cursor: pointer; }
+        .nav-link:hover { color: #c9a84c; }
+
+        @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .title-gradient { background: linear-gradient(135deg, #f0e6d0, #c9a84c, #f0e6d0, #8b6914, #c9a84c); background-size: 300% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: gradientMove 5s ease infinite; }
       `}</style>
 
+      {/* AMBIENT BACKGROUND */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>
+        <div style={{ position: "absolute", top: "10%", left: "20%", width: 400, height: 400, background: "radial-gradient(circle, rgba(201,168,76,0.04) 0%, transparent 70%)", borderRadius: "50%" }} />
+        <div style={{ position: "absolute", bottom: "20%", right: "10%", width: 300, height: 300, background: "radial-gradient(circle, rgba(201,168,76,0.03) 0%, transparent 70%)", borderRadius: "50%" }} />
+      </div>
+
       {/* NAVBAR */}
-      <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(10,10,15,0.95)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(12px)", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "60px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ width: 34, height: 34, background: "linear-gradient(135deg, #c9411e, #8b1a0a)", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: 16, color: "#fff" }}>墨</div>
-          <span style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: "0.05em" }}>INKVERSE</span>
-          <span style={{ fontSize: 10, color: "#c9411e", fontFamily: "'Noto Sans', sans-serif", letterSpacing: "0.1em" }}>AI MANGA</span>
+      <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(8,8,8,0.92)", borderBottom: "1px solid rgba(201,168,76,0.12)", backdropFilter: "blur(20px)", padding: "0 40px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <div style={{ width: 38, height: 38, background: "linear-gradient(135deg, #c9a84c, #8b6914)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 18, color: "#080808", boxShadow: "0 4px 15px rgba(201,168,76,0.3)" }}>墨</div>
+          <div>
+            <div style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 18, letterSpacing: "0.12em", color: "#f0e6d0" }}>INKVERSE</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9, letterSpacing: "0.3em", color: "#c9a84c", textTransform: "uppercase", marginTop: -2 }}>AI Manga Platform</div>
+          </div>
         </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+          {["Khám Phá", "Bảng Xếp Hạng", "Tác Giả"].map(item => (
+            <span key={item} className="nav-link" style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.5)", letterSpacing: "0.05em" }}>{item}</span>
+          ))}
+        </div>
+
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button className="glow-btn" onClick={() => setShowUpload(true)} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", background: "#c9411e", borderRadius: "6px", color: "#fff", fontFamily: "'Noto Sans', sans-serif", fontSize: 13, fontWeight: 600 }}>
-            ⬆ Đăng Manga
+          <button className="gold-btn" onClick={() => setShowUpload(true)} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 20px", borderRadius: "6px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: "0.05em" }}>
+            ✦ Đăng Manga
           </button>
           {isLoggedIn ? (
-            <div onClick={() => router.push("/profile")} style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #c9411e, #6a1a8a)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", fontSize: 16 }}>👤</div>
+            <div onClick={() => router.push("/profile")} style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #c9a84c, #8b6914)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, boxShadow: "0 0 15px rgba(201,168,76,0.3)" }}>👤</div>
           ) : (
-            <button onClick={() => setShowAuth(true)} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "6px", padding: "7px 14px", fontFamily: "'Noto Sans', sans-serif", fontSize: 13, color: "rgba(232,224,212,0.7)", cursor: "pointer" }}>Đăng nhập</button>
+            <button onClick={() => setShowAuth(true)} style={{ background: "transparent", border: "1px solid rgba(201,168,76,0.3)", borderRadius: "6px", padding: "8px 18px", fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.6)", cursor: "pointer", transition: "all 0.3s", letterSpacing: "0.05em" }}>Đăng nhập</button>
           )}
         </div>
       </nav>
 
       {/* HERO */}
-      <div style={{ background: "linear-gradient(180deg, rgba(201,65,30,0.08) 0%, transparent 100%)", padding: "60px 24px 48px", textAlign: "center" }}>
-        <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-          <div style={{ height: 1, width: 40, background: "rgba(201,65,30,0.5)" }} />
-          <span style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 11, letterSpacing: "0.2em", color: "#c9411e", textTransform: "uppercase" }}>Nền tảng manga AI hàng đầu</span>
-          <div style={{ height: 1, width: 40, background: "rgba(201,65,30,0.5)" }} />
+      <div style={{ position: "relative", zIndex: 1, padding: "100px 40px 80px", textAlign: "center", overflow: "hidden" }}>
+        <div className="hero-line" style={{ maxWidth: 200, margin: "0 auto 24px" }} />
+        
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, letterSpacing: "0.4em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 24 }}>
+          ✦ Nền Tảng Manga AI Hàng Đầu ✦
         </div>
-        <h1 style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "clamp(40px, 7vw, 72px)", lineHeight: 1.05, marginBottom: 16 }}>
-          Thế Giới Manga<br /><span style={{ color: "#c9411e" }}>Do AI Sáng Tạo</span>
+
+        <h1 style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: "clamp(48px, 8vw, 96px)", lineHeight: 1.0, marginBottom: 8, letterSpacing: "0.02em" }}>
+          <span className="title-gradient">THẾ GIỚI</span>
         </h1>
-        <p style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 15, color: "rgba(232,224,212,0.5)", maxWidth: 480, margin: "0 auto 32px", lineHeight: 1.7 }}>
-          Khám phá hàng nghìn bộ manga được tạo bởi AI. Tự do đăng tải, chia sẻ và đọc manga của bạn.
+        <h1 style={{ fontFamily: "'Cinzel', serif", fontWeight: 400, fontSize: "clamp(32px, 5vw, 64px)", lineHeight: 1.2, marginBottom: 32, letterSpacing: "0.15em", color: "rgba(240,230,208,0.4)" }}>
+          MANGA · AI · SÁNG TẠO
+        </h1>
+
+        <div className="hero-line" style={{ maxWidth: 300, margin: "0 auto 32px" }} />
+
+        <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(16px, 2vw, 20px)", color: "rgba(240,230,208,0.45)", maxWidth: 520, margin: "0 auto 48px", lineHeight: 1.8, fontWeight: 300, letterSpacing: "0.03em" }}>
+          Khám phá hàng nghìn bộ manga được tạo bởi trí tuệ nhân tạo. Tự do sáng tác, chia sẻ và đọc manga của bạn.
         </p>
-        <div style={{ display: "flex", alignItems: "center", maxWidth: 500, margin: "0 auto", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "10px", overflow: "hidden" }}>
-          <div style={{ padding: "0 16px", color: "rgba(232,224,212,0.3)" }}>🔍</div>
-          <input type="text" placeholder="Tìm kiếm manga, tác giả..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="input-field" style={{ border: "none", borderRadius: 0, background: "transparent", flex: 1, padding: "14px 0" }} />
+
+        {/* SEARCH */}
+        <div style={{ display: "flex", alignItems: "center", maxWidth: 560, margin: "0 auto 64px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "40px", overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(201,168,76,0.1)" }}>
+          <div style={{ padding: "0 20px", color: "#c9a84c", fontSize: 16 }}>✦</div>
+          <input type="text" placeholder="Tìm kiếm manga, tác giả, thể loại..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ flex: 1, padding: "16px 0", background: "transparent", border: "none", color: "#f0e6d0", fontFamily: "'Inter', sans-serif", fontSize: 14, outline: "none" }} />
         </div>
-        <div style={{ display: "flex", justifyContent: "center", gap: "48px", marginTop: 48 }}>
-          {[["12,400+", "Bộ Manga"], ["890K+", "Lượt Đọc"], ["34K+", "Tác Giả"]].map(([num, label]) => (
+
+        {/* STATS */}
+        <div style={{ display: "flex", justifyContent: "center", gap: "64px", flexWrap: "wrap" }}>
+          {[["12,400+", "Bộ Manga", "📚"], ["890K+", "Lượt Đọc", "👁"], ["34K+", "Tác Giả", "✍"]].map(([num, label, icon]) => (
             <div key={label} style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "'Oswald', sans-serif", fontSize: 28, color: "#c9411e", fontWeight: 700 }}>{num}</div>
-              <div style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 12, color: "rgba(232,224,212,0.4)", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 4 }}>{label}</div>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: "clamp(24px, 3vw, 36px)", color: "#c9a84c", fontWeight: 600, letterSpacing: "0.05em" }}>{num}</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.35)", letterSpacing: "0.2em", textTransform: "uppercase", marginTop: 6 }}>{icon} {label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* MANGA GRID */}
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
-          <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600 }}>🔥 Manga Mới Nhất</h2>
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-            {GENRES.map(g => (
-              <button key={g} className="genre-btn" onClick={() => setSelectedGenre(g)} style={{ padding: "5px 12px", borderRadius: "20px", background: selectedGenre === g ? "#c9411e" : "rgba(255,255,255,0.05)", color: selectedGenre === g ? "#fff" : "rgba(232,224,212,0.5)", fontFamily: "'Noto Sans', sans-serif", fontSize: 12, fontWeight: 500 }}>{g}</button>
-            ))}
-          </div>
+      {/* DIVIDER */}
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "0 40px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: 40 }}>
+          <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(201,168,76,0.3))" }} />
+          <span style={{ fontFamily: "'Cinzel', serif", fontSize: 11, letterSpacing: "0.3em", color: "#c9a84c", textTransform: "uppercase" }}>✦ Manga Mới Nhất ✦</span>
+          <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(201,168,76,0.3), transparent)" }} />
         </div>
 
+        {/* GENRE FILTER */}
+        <div style={{ display: "flex", gap: "8px", marginBottom: 40, flexWrap: "wrap", justifyContent: "center" }}>
+          {GENRES.map(g => (
+            <button key={g} className="genre-pill" onClick={() => setSelectedGenre(g)} style={{ padding: "7px 18px", borderRadius: "30px", background: selectedGenre === g ? "linear-gradient(135deg, #c9a84c, #8b6914)" : "rgba(255,255,255,0.03)", border: selectedGenre === g ? "none" : "1px solid rgba(201,168,76,0.15)", color: selectedGenre === g ? "#080808" : "rgba(240,230,208,0.45)", fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: selectedGenre === g ? 600 : 400, letterSpacing: "0.08em", boxShadow: selectedGenre === g ? "0 4px 15px rgba(201,168,76,0.3)" : "none" }}>
+              {g}
+            </button>
+          ))}
+        </div>
+
+        {/* MANGA GRID */}
         {mangas.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 0", color: "rgba(232,224,212,0.3)" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📚</div>
-            <div style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 16 }}>Chưa có manga nào. Hãy là người đầu tiên đăng!</div>
+          <div style={{ textAlign: "center", padding: "100px 0" }}>
+            <div className="float-anim" style={{ fontSize: 64, marginBottom: 24 }}>📜</div>
+            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, color: "rgba(240,230,208,0.3)", marginBottom: 8 }}>Chưa có manga nào</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.2)", letterSpacing: "0.1em" }}>HÃY LÀ NGƯỜI ĐẦU TIÊN ĐĂNG TẢI</div>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "24px", marginBottom: 80 }}>
             {mangas.map((manga: any) => (
-              <div key={manga.id} className="manga-card" onMouseEnter={() => setHoveredManga(manga.id)} onMouseLeave={() => setHoveredManga(null)}>
-                <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden", aspectRatio: "3/4", marginBottom: 10, background: "rgba(255,255,255,0.05)" }}>
+              <div key={manga.id} className="manga-card" onMouseEnter={() => setHoveredManga(manga.id)} onMouseLeave={() => setHoveredManga(null)} onClick={() => router.push(`/manga/${manga.id}`)}>
+                <div style={{ position: "relative", borderRadius: "10px", overflow: "hidden", aspectRatio: "3/4", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.1)", marginBottom: 12 }}>
                   {manga.coverImage ? (
                     <img src={manga.coverImage} alt={manga.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
-                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>📖</div>
+                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, background: "linear-gradient(135deg, rgba(201,168,76,0.05), rgba(201,168,76,0.02))" }}>📖</div>
                   )}
-                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(transparent, rgba(0,0,0,0.8))" }} />
-                  <div style={{ position: "absolute", bottom: 8, left: 8, right: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: "#f5a623", fontSize: 11, fontFamily: "'Noto Sans', sans-serif" }}>⭐ {manga.avgRating?.toFixed(1) || "0.0"}</span>
-                    <span style={{ color: "rgba(232,224,212,0.5)", fontSize: 10, fontFamily: "'Noto Sans', sans-serif" }}>👁 {manga.views}</span>
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "60%", background: "linear-gradient(transparent, rgba(8,8,8,0.95))" }} />
+                  <div style={{ position: "absolute", bottom: 10, left: 10, right: 10, display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontFamily: "'Inter', sans-serif", color: "#c9a84c", fontSize: 11, fontWeight: 500 }}>⭐ {manga.avgRating?.toFixed(1) || "0.0"}</span>
+                    <span style={{ fontFamily: "'Inter', sans-serif", color: "rgba(240,230,208,0.4)", fontSize: 10 }}>👁 {manga.views}</span>
                   </div>
                   {hoveredManga === manga.id && (
-                    <div style={{ position: "absolute", inset: 0, background: "rgba(201,65,30,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <button onClick={() => router.push(`/manga/${manga.id}`)} style={{ background: "#c9411e", color: "#fff", border: "none", padding: "8px 18px", borderRadius: "6px", fontFamily: "'Noto Sans', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Đọc Ngay</button>
+                    <div style={{ position: "absolute", inset: 0, background: "rgba(201,168,76,0.08)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(2px)" }}>
+                      <div style={{ padding: "10px 22px", background: "linear-gradient(135deg, #c9a84c, #8b6914)", borderRadius: "6px", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, color: "#080808", boxShadow: "0 4px 20px rgba(201,168,76,0.4)" }}>Đọc Ngay</div>
                     </div>
                   )}
                 </div>
-                <h3 style={{ fontFamily: "'Noto Serif', serif", fontSize: 14, fontWeight: 600, color: "#e8e0d4", marginBottom: 4, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" } as any}>{manga.title}</h3>
-                <div style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 11, color: "rgba(232,224,212,0.4)" }}>@{manga.author?.name}</div>
+                <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 15, fontWeight: 600, color: "#f0e6d0", marginBottom: 4, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" } as any}>{manga.title}</h3>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)", letterSpacing: "0.05em" }}>@{manga.author?.name}</div>
               </div>
             ))}
           </div>
@@ -188,23 +224,24 @@ const router = useRouter();
       {/* AUTH MODAL */}
       {showAuth && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowAuth(false)}>
-          <div className="modal-box" style={{ background: "#111118", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "36px", width: "100%", maxWidth: 400 }}>
-            <div style={{ textAlign: "center", marginBottom: 28 }}>
-              <div style={{ width: 44, height: 44, background: "linear-gradient(135deg, #c9411e, #8b1a0a)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: 20, color: "#fff", margin: "0 auto 16px" }}>墨</div>
-              <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, marginBottom: 4 }}>{authMode === "login" ? "Chào Mừng Trở Lại" : "Tạo Tài Khoản"}</h2>
+          <div className="modal-box glass-card" style={{ borderRadius: "16px", padding: "48px", width: "100%", maxWidth: 420, border: "1px solid rgba(201,168,76,0.2)", boxShadow: "0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(201,168,76,0.05)" }}>
+            <div style={{ textAlign: "center", marginBottom: 36 }}>
+              <div style={{ width: 52, height: 52, background: "linear-gradient(135deg, #c9a84c, #8b6914)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 22, color: "#080808", margin: "0 auto 20px", boxShadow: "0 8px 25px rgba(201,168,76,0.3)" }}>墨</div>
+              <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: 22, color: "#f0e6d0", letterSpacing: "0.1em", marginBottom: 6 }}>{authMode === "login" ? "CHÀO MỪNG" : "TẠO TÀI KHOẢN"}</h2>
+              <div className="hero-line" style={{ maxWidth: 80, margin: "12px auto 0" }} />
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: 20 }}>
-              {authMode === "register" && <input className="input-field" placeholder="Tên của bạn..." value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />}
-              <input className="input-field" type="email" placeholder="Email..." value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-              <input className="input-field" type="password" placeholder="Mật khẩu..." value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: 24 }}>
+              {authMode === "register" && <input className="input-luxury" placeholder="Tên của bạn..." value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />}
+              <input className="input-luxury" type="email" placeholder="Email..." value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+              <input className="input-luxury" type="password" placeholder="Mật khẩu..." value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
             </div>
-            {msg && <div style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 13, marginBottom: 12, textAlign: "center" }}>{msg}</div>}
-            <button className="glow-btn" onClick={handleAuth} disabled={loading} style={{ width: "100%", padding: "13px", borderRadius: "8px", background: "#c9411e", color: "#fff", fontFamily: "'Noto Sans', sans-serif", fontSize: 14, fontWeight: 600, marginBottom: 16, opacity: loading ? 0.7 : 1 }}>
-              {loading ? "Đang xử lý..." : authMode === "login" ? "Đăng Nhập" : "Tạo Tài Khoản"}
+            {msg && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, marginBottom: 16, textAlign: "center", color: msg.includes("✅") ? "#c9a84c" : "#ff6b6b" }}>{msg}</div>}
+            <button className="gold-btn" onClick={handleAuth} disabled={loading} style={{ width: "100%", padding: "14px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 20, letterSpacing: "0.1em", opacity: loading ? 0.7 : 1 }}>
+              {loading ? "ĐANG XỬ LÝ..." : authMode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
             </button>
-            <div style={{ textAlign: "center", fontFamily: "'Noto Sans', sans-serif", fontSize: 13, color: "rgba(232,224,212,0.4)" }}>
+            <div style={{ textAlign: "center", fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.35)" }}>
               {authMode === "login" ? "Chưa có tài khoản? " : "Đã có tài khoản? "}
-              <span onClick={() => { setAuthMode(m => m === "login" ? "register" : "login"); setMsg(""); }} style={{ color: "#c9411e", cursor: "pointer", fontWeight: 600 }}>{authMode === "login" ? "Đăng ký" : "Đăng nhập"}</span>
+              <span onClick={() => { setAuthMode(m => m === "login" ? "register" : "login"); setMsg(""); }} style={{ color: "#c9a84c", cursor: "pointer", fontWeight: 600 }}>{authMode === "login" ? "Đăng ký ngay" : "Đăng nhập"}</span>
             </div>
           </div>
         </div>
@@ -213,45 +250,57 @@ const router = useRouter();
       {/* UPLOAD MODAL */}
       {showUpload && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowUpload(false)}>
-          <div className="modal-box" style={{ background: "#111118", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "32px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto" }}>
-            <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, marginBottom: 24 }}>
-              {uploadStep === 1 ? "📝 Thông Tin Manga" : uploadStep === 2 ? "📂 Tải Ảnh Chapter" : "🚀 Xác Nhận Đăng"}
-            </h2>
+          <div className="modal-box glass-card" style={{ borderRadius: "16px", padding: "40px", width: "100%", maxWidth: 540, maxHeight: "90vh", overflowY: "auto", border: "1px solid rgba(201,168,76,0.2)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: 32 }}>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 20, color: "#f0e6d0", letterSpacing: "0.08em" }}>
+                {uploadStep === 1 ? "✦ THÔNG TIN MANGA" : uploadStep === 2 ? "✦ TẢI ẢNH CHAPTER" : "✦ XÁC NHẬN ĐĂNG"}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "8px", marginBottom: 32 }}>
+              {[1,2,3].map(s => (
+                <div key={s} style={{ flex: 1, height: 2, background: s <= uploadStep ? "linear-gradient(90deg, #c9a84c, #8b6914)" : "rgba(255,255,255,0.08)", borderRadius: 1, transition: "all 0.3s" }} />
+              ))}
+            </div>
+
             {uploadStep === 1 && (
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <input className="input-field" placeholder="Tên manga *" />
-                <textarea className="input-field" rows={3} placeholder="Mô tả..." style={{ resize: "none" }} />
-                <div className="upload-zone" style={{ border: "2px dashed rgba(255,255,255,0.1)", borderRadius: "8px", padding: "24px", textAlign: "center", cursor: "pointer" }}>
-                  <div style={{ fontSize: 24, marginBottom: 8 }}>🖼</div>
-                  <div style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 13, color: "rgba(232,224,212,0.4)" }}>Kéo thả ảnh bìa vào đây</div>
+                <input className="input-luxury" placeholder="Tên manga *" />
+                <textarea className="input-luxury" rows={3} placeholder="Mô tả câu chuyện..." style={{ resize: "none" }} />
+                <div onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} style={{ border: `1px dashed ${dragOver ? "#c9a84c" : "rgba(201,168,76,0.2)"}`, borderRadius: "8px", padding: "32px", textAlign: "center", cursor: "pointer", transition: "all 0.3s", background: dragOver ? "rgba(201,168,76,0.05)" : "transparent" }}>
+                  <div style={{ fontSize: 28, marginBottom: 10 }}>🖼</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.35)", letterSpacing: "0.05em" }}>KÉO THẢ ẢNH BÌA VÀO ĐÂY</div>
                 </div>
               </div>
             )}
             {uploadStep === 2 && (
-              <div className="upload-zone" onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={e => { e.preventDefault(); setDragOver(false); }} style={{ border: `2px dashed ${dragOver ? "#c9411e" : "rgba(255,255,255,0.1)"}`, borderRadius: "8px", padding: "48px 24px", textAlign: "center", cursor: "pointer" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>📂</div>
-                <div style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 15, color: "rgba(232,224,212,0.6)", marginBottom: 6 }}>Kéo thả ảnh manga vào đây</div>
-                <div style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 12, color: "rgba(232,224,212,0.3)" }}>JPG, PNG, WEBP — Tối đa 50 trang</div>
+              <div onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={e => { e.preventDefault(); setDragOver(false); }} style={{ border: `1px dashed ${dragOver ? "#c9a84c" : "rgba(201,168,76,0.2)"}`, borderRadius: "8px", padding: "60px 32px", textAlign: "center", cursor: "pointer", transition: "all 0.3s", background: dragOver ? "rgba(201,168,76,0.05)" : "transparent" }}>
+                <div className="float-anim" style={{ fontSize: 48, marginBottom: 16 }}>📂</div>
+                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, color: "rgba(240,230,208,0.5)", marginBottom: 8 }}>Kéo thả ảnh manga vào đây</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.25)", letterSpacing: "0.1em" }}>JPG · PNG · WEBP — TỐI ĐA 50 TRANG</div>
               </div>
             )}
             {uploadStep === 3 && (
               <div style={{ textAlign: "center", padding: "20px 0" }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-                <p style={{ fontFamily: "'Noto Sans', sans-serif", fontSize: 14, color: "rgba(232,224,212,0.5)", lineHeight: 1.7 }}>Manga của bạn sẵn sàng được đăng lên!</p>
+                <div className="float-anim" style={{ fontSize: 56, marginBottom: 20 }}>🎉</div>
+                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, color: "rgba(240,230,208,0.6)", lineHeight: 1.7 }}>Manga của bạn sẵn sàng được đăng lên thế giới!</div>
               </div>
             )}
-            <div style={{ display: "flex", gap: "10px", marginTop: 28 }}>
-              {uploadStep > 1 && <button onClick={() => setUploadStep(s => s - 1)} style={{ flex: 1, padding: "12px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(232,224,212,0.6)", fontFamily: "'Noto Sans', sans-serif", fontSize: 14, cursor: "pointer" }}>← Quay lại</button>}
-              <button className="glow-btn" onClick={() => uploadStep < 3 ? setUploadStep(s => s + 1) : setShowUpload(false)} style={{ flex: 2, padding: "12px", borderRadius: "8px", background: "#c9411e", color: "#fff", fontFamily: "'Noto Sans', sans-serif", fontSize: 14, fontWeight: 600 }}>
-                {uploadStep === 3 ? "🚀 Đăng Manga" : "Tiếp theo →"}
+
+            <div style={{ display: "flex", gap: "12px", marginTop: 32 }}>
+              {uploadStep > 1 && <button onClick={() => setUploadStep(s => s - 1)} style={{ flex: 1, padding: "13px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(201,168,76,0.15)", color: "rgba(240,230,208,0.5)", fontFamily: "'Inter', sans-serif", fontSize: 13, cursor: "pointer", letterSpacing: "0.08em" }}>← QUAY LẠI</button>}
+              <button className="gold-btn" onClick={() => uploadStep < 3 ? setUploadStep(s => s + 1) : setShowUpload(false)} style={{ flex: 2, padding: "13px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em" }}>
+                {uploadStep === 3 ? "✦ ĐĂNG MANGA" : "TIẾP THEO →"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "24px", textAlign: "center", fontFamily: "'Noto Sans', sans-serif", fontSize: 12, color: "rgba(232,224,212,0.25)" }}>
-        © 2025 INKVERSE — Nền tảng Manga AI
+      {/* FOOTER */}
+      <footer style={{ position: "relative", zIndex: 1, borderTop: "1px solid rgba(201,168,76,0.1)", padding: "32px 40px", textAlign: "center" }}>
+        <div style={{ fontFamily: "'Cinzel', serif", fontSize: 14, color: "#c9a84c", letterSpacing: "0.2em", marginBottom: 8 }}>INKVERSE</div>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.2)", letterSpacing: "0.15em" }}>© 2025 · NỀN TẢNG MANGA AI · ALL RIGHTS RESERVED</div>
       </footer>
     </div>
   );

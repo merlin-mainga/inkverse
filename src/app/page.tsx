@@ -107,11 +107,7 @@ export default function Home() {
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
           <img src="/logo.png" alt="Mainga Logo" style={{ width: 38, height: 38, borderRadius: "8px", objectFit: "contain" }} />
           <div>
-            <div style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 18, letterSpacing: "0.12em", color: "#f0e6d0" }}>
-
-  M<span style={{ color: "#c9a84c", textShadow: "0 0 15px rgba(201,168,76,0.8)", fontWeight: 700 }}>AI</span>NGA
-
-</div>
+           <div style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 18, letterSpacing: "0.12em", color: "#f0e6d0" }}>M<span style={{ color: "#c9a84c", textShadow: "0 0 15px rgba(201,168,76,0.8)", fontWeight: 700 }}>AI</span>NGA</div>
 
 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9, letterSpacing: "0.3em", color: "#c9a84c", textTransform: "uppercase", marginTop: -2 }}>AI Manga Platform</div>
 

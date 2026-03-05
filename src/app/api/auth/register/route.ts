@@ -4,35 +4,29 @@ import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, password, role } = await req.json();
 
     if (!email || !password || !name)
-      return NextResponse.json(
-        { error: "Thiếu thông tin" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Thiếu thông tin" }, { status: 400 });
 
-    const exists = await prisma.user.findUnique({
-      where: { email },
-    });
+    const exists = await prisma.user.findUnique({ where: { email } });
     if (exists)
-      return NextResponse.json(
-        { error: "Email đã tồn tại" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email đã tồn tại" }, { status: 400 });
 
     const hashed = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
-      data: { name, email, password: hashed },
-      select: { id: true, name: true, email: true },
+      data: {
+        name,
+        email,
+        password: hashed,
+        role: role === "author" ? "author" : "user",
+      },
+      select: { id: true, name: true, email: true, role: true },
     });
 
     return NextResponse.json(user, { status: 201 });
   } catch (e: any) {
     console.error("Register error:", e);
-    return NextResponse.json(
-      { error: e.message || "Lỗi server" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: e.message || "Lỗi server" }, { status: 500 });
   }
 }

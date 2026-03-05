@@ -270,12 +270,14 @@ export default function Home() {
               </div>
             )}
             {uploadStep === 2 && (
-              <div onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={e => { e.preventDefault(); setDragOver(false); }} style={{ border: `1px dashed ${dragOver ? "#c9a84c" : "rgba(201,168,76,0.2)"}`, borderRadius: "8px", padding: "60px 32px", textAlign: "center", cursor: "pointer", transition: "all 0.3s", background: dragOver ? "rgba(201,168,76,0.05)" : "transparent" }}>
-                <div className="float-anim" style={{ fontSize: 48, marginBottom: 16 }}>📂</div>
-                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, color: "rgba(240,230,208,0.5)", marginBottom: 8 }}>Kéo thả ảnh manga vào đây</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.25)", letterSpacing: "0.1em" }}>JPG · PNG · WEBP — TỐI ĐA 50 TRANG</div>
-              </div>
-            )}
+  <div onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={e => { e.preventDefault(); setDragOver(false); }} onClick={() => document.getElementById('pages-upload')?.click()} style={{ border: `1px dashed ${dragOver ? "#c9a84c" : "rgba(201,168,76,0.2)"}`, borderRadius: "8px", padding: "60px 32px", textAlign: "center", cursor: "pointer", transition: "all 0.3s", background: dragOver ? "rgba(201,168,76,0.05)" : "transparent" }}>
+    <div className="float-anim" style={{ fontSize: 48, marginBottom: 16 }}>📂</div>
+    <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, color: "rgba(240,230,208,0.5)", marginBottom: 8 }}>Kéo thả ảnh manga vào đây</div>
+    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.25)", letterSpacing: "0.1em" }}>JPG · PNG · WEBP — TỐI ĐA 50 TRANG</div>
+    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#c9a84c", marginTop: 12 }}>hoặc Click để tải lên từ PC</div>
+    <input id="pages-upload" type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => { const files = Array.from(e.target.files || []); console.log("Pages:", files.length); }} />
+  </div>
+)}
             {uploadStep === 3 && (
               <div style={{ textAlign: "center", padding: "20px 0" }}>
                 <div className="float-anim" style={{ fontSize: 56, marginBottom: 20 }}>🎉</div>

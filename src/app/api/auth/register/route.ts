@@ -14,17 +14,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email đã tồn tại" }, { status: 400 });
 
     const hashed = await bcrypt.hash(password, 12);
+    
+    // Tạo user trước không có role
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashed,
-        role: role === "author" ? "author" : "user",
       },
-      select: { id: true, name: true, email: true, role: true },
     });
 
-    return NextResponse.json(user, { status: 201 });
+    // Nếu là author thì update role sau
+    if (role === "author") {
+      await prisma.$executeRaw`UPDATE "User" SET role = 'author' WHERE id = ${user.id}`;
+    }
+
+    return NextResponse.json({ id: user.id, name: user.name, email: user.email }, { status: 201 });
   } catch (e: any) {
     console.error("Register error:", e);
     return NextResponse.json({ error: e.message || "Lỗi server" }, { status: 500 });

@@ -263,10 +263,12 @@ export default function Home() {
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <input className="input-luxury" placeholder="Tên manga *" />
                 <textarea className="input-luxury" rows={3} placeholder="Mô tả câu chuyện..." style={{ resize: "none" }} />
-                <div onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} style={{ border: `1px dashed ${dragOver ? "#c9a84c" : "rgba(201,168,76,0.2)"}`, borderRadius: "8px", padding: "32px", textAlign: "center", cursor: "pointer", transition: "all 0.3s", background: dragOver ? "rgba(201,168,76,0.05)" : "transparent" }}>
-                  <div style={{ fontSize: 28, marginBottom: 10 }}>🖼</div>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.35)", letterSpacing: "0.05em" }}>KÉO THẢ ẢNH BÌA VÀO ĐÂY</div>
-                </div>
+                <div onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onClick={() => document.getElementById('cover-upload')?.click()} style={{ border: `1px dashed ${dragOver ? "#c9a84c" : "rgba(201,168,76,0.2)"}`, borderRadius: "8px", padding: "32px", textAlign: "center", cursor: "pointer", transition: "all 0.3s", background: dragOver ? "rgba(201,168,76,0.05)" : "transparent" }}>
+  <div style={{ fontSize: 28, marginBottom: 10 }}>🖼</div>
+  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.35)", letterSpacing: "0.05em" }}>KÉO THẢ ẢNH BÌA VÀO ĐÂY</div>
+  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#c9a84c", marginTop: 8 }}>hoặc Click để tải lên từ PC</div>
+  <input id="cover-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const file = e.target.files?.[0]; if (file) console.log("Cover:", file.name); }} />
+</div>
               </div>
             )}
             {uploadStep === 2 && (

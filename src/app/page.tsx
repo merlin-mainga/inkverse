@@ -105,12 +105,15 @@ export default function Home() {
       {/* NAVBAR */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(8,8,8,0.92)", borderBottom: "1px solid rgba(201,168,76,0.12)", backdropFilter: "blur(20px)", padding: "0 40px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <div style={{ width: 38, height: 38, background: "linear-gradient(135deg, #c9a84c, #8b6914)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 18, color: "#080808", boxShadow: "0 4px 15px rgba(201,168,76,0.3)" }}>墨</div>
+          <img src="/logo.png" alt="Mainga Logo" style={{ width: 38, height: 38, borderRadius: "8px", objectFit: "contain" }} />
           <div>
-            <div style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 18, letterSpacing: "0.12em", color: "#f0e6d0" }}>INKVERSE</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9, letterSpacing: "0.3em", color: "#c9a84c", textTransform: "uppercase", marginTop: -2 }}>AI Manga Platform</div>
-          </div>
-        </div>
+            <div style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 18, letterSpacing: "0.12em", color: "#f0e6d0" }}>
+
+  M<span style={{ color: "#c9a84c", textShadow: "0 0 15px rgba(201,168,76,0.8)", fontWeight: 700 }}>AI</span>NGA
+
+</div>
+
+<div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9, letterSpacing: "0.3em", color: "#c9a84c", textTransform: "uppercase", marginTop: -2 }}>AI Manga Platform</div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
           {["Khám Phá", "Bảng Xếp Hạng", "Tác Giả"].map(item => (

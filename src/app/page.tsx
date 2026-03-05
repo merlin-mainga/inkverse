@@ -278,6 +278,15 @@ const [coverPreview, setCoverPreview] = useState<string>("");
             <button className="gold-btn" onClick={handleAuth} disabled={loading} style={{ width: "100%", padding: "14px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 20, letterSpacing: "0.1em", opacity: loading ? 0.7 : 1 }}>
               {loading ? "ĐANG XỬ LÝ..." : authMode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
             </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: 20 }}>
+  <div style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }} />
+  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "rgba(240,230,208,0.3)" }}>hoặc</span>
+  <div style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }} />
+</div>
+<button onClick={async () => { const { signIn } = await import("next-auth/react"); signIn("google"); }} style={{ width: "100%", padding: "13px", background: "white", border: "none", borderRadius: "8px", color: "#333", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: 20 }}>
+  <img src="https://www.google.com/favicon.ico" width={18} height={18} />
+  Đăng nhập với Google
+</button>
             <div style={{ textAlign: "center", fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.35)" }}>
               {authMode === "login" ? "Chưa có tài khoản? " : "Đã có tài khoản? "}
               <span onClick={() => { setAuthMode(m => m === "login" ? "register" : "login"); setMsg(""); }} style={{ color: "#c9a84c", cursor: "pointer", fontWeight: 600 }}>{authMode === "login" ? "Đăng ký ngay" : "Đăng nhập"}</span>

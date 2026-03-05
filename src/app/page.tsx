@@ -120,7 +120,7 @@ export default function Home() {
 
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <button className="gold-btn" onClick={() => setShowUpload(true)} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 20px", borderRadius: "6px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: "0.05em" }}>
-            ✦ Đăng Manga
+            ✦ Đăng Mainga
           </button>
           {isLoggedIn ? (
             <div onClick={() => router.push("/profile")} style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #c9a84c, #8b6914)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, boxShadow: "0 0 15px rgba(201,168,76,0.3)" }}>👤</div>
@@ -135,20 +135,20 @@ export default function Home() {
         <div className="hero-line" style={{ maxWidth: 200, margin: "0 auto 24px" }} />
         
         <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, letterSpacing: "0.4em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 24 }}>
-          ✦ Nền Tảng Manga AI Hàng Đầu ✦
+          ✦ Nền Tảng Đọc Và Sáng Tác Mainga Hàng Đầu ✦
         </div>
 
         <h1 style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: "clamp(48px, 8vw, 96px)", lineHeight: 1.0, marginBottom: 8, letterSpacing: "0.02em" }}>
-          <span className="title-gradient">THẾ GIỚI</span>
+          <span className="title-gradient">THẾ GIỚI MAINGA</span>
         </h1>
         <h1 style={{ fontFamily: "'Cinzel', serif", fontWeight: 400, fontSize: "clamp(32px, 5vw, 64px)", lineHeight: 1.2, marginBottom: 32, letterSpacing: "0.15em", color: "rgba(240,230,208,0.4)" }}>
-          MANGA · AI · SÁNG TẠO
+          MAINGA - LÀ KHÔNG CÓ GIỚI HẠN 
         </h1>
 
         <div className="hero-line" style={{ maxWidth: 300, margin: "0 auto 32px" }} />
 
         <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(16px, 2vw, 20px)", color: "rgba(240,230,208,0.45)", maxWidth: 520, margin: "0 auto 48px", lineHeight: 1.8, fontWeight: 300, letterSpacing: "0.03em" }}>
-          Khám phá hàng nghìn bộ manga được tạo bởi trí tuệ nhân tạo. Tự do sáng tác, chia sẻ và đọc manga của bạn.
+          Mainga là sự kết hợp giữa Manga & AI. Nơi mà chính bạn là "main" của câu chuyện của mình.
         </p>
 
         {/* SEARCH */}

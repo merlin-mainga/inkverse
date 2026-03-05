@@ -6,38 +6,25 @@ import { uploadMangaPages } from "@/lib/cloudinary";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session?.user)
-    return NextResponse.json(
-      { error: "Chưa đăng nhập" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
-  const manga = await prisma.manga.findUnique({
-    where: { id: params.id },
-  });
+  const manga = await prisma.manga.findUnique({ where: { id } });
   if (!manga || manga.authorId !== (session.user as any).id)
-    return NextResponse.json(
-      { error: "Không có quyền" },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
 
   const { title, chapterNum, pages } = await req.json();
-
   let pageUrls: string[] = pages;
   if (pages[0]?.startsWith("data:")) {
-    pageUrls = await uploadMangaPages(pages, params.id, chapterNum);
+    pageUrls = await uploadMangaPages(pages, id, chapterNum);
   }
 
   const chapter = await prisma.chapter.create({
-    data: {
-      title,
-      chapterNum,
-      pages: pageUrls,
-      mangaId: params.id,
-    },
+    data: { title, chapterNum, pages: pageUrls, mangaId: id },
   });
 
   return NextResponse.json(chapter, { status: 201 });
@@ -45,19 +32,16 @@ export async function POST(
 
 export async function GET(
   _: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const chapters = await prisma.chapter.findMany({
-    where: { mangaId: params.id },
+    where: { mangaId: id },
     orderBy: { chapterNum: "asc" },
     select: {
-      id: true,
-      title: true,
-      chapterNum: true,
-      views: true,
-      createdAt: true,
+      id: true, title: true, chapterNum: true,
+      views: true, createdAt: true,
     },
   });
-
   return NextResponse.json(chapters);
 }

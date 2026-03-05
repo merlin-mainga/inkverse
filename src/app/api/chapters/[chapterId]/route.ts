@@ -3,10 +3,12 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _: NextRequest,
-  { params }: { params: { chapterId: string } }
+  { params }: { params: Promise<{ chapterId: string }> }
 ) {
+  const { chapterId } = await params;
+  
   const chapter = await prisma.chapter.findUnique({
-    where: { id: params.chapterId },
+    where: { id: chapterId },
   });
 
   if (!chapter)
@@ -15,9 +17,8 @@ export async function GET(
       { status: 404 }
     );
 
-  // Tăng view
   await prisma.chapter.update({
-    where: { id: params.chapterId },
+    where: { id: chapterId },
     data: { views: { increment: 1 } },
   });
 

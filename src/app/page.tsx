@@ -13,14 +13,23 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+const [session, setSession] = useState<any>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [uploadStep, setUploadStep] = useState(1);
   const [dragOver, setDragOver] = useState(false);
+  const [coverImage, setCoverImage] = useState<File | null>(null);
+const [coverPreview, setCoverPreview] = useState<string>("");
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
-  useEffect(() => { fetchMangas(); }, [selectedGenre, searchQuery]);
+  useEffect(() => {
+  import("next-auth/react").then(({ getSession }) => {
+    getSession().then(s => {
+      if (s) { setIsLoggedIn(true); setSession(s); }
+    });
+  });
+}, []);
 
   async function fetchMangas() {
     const params = new URLSearchParams();
@@ -263,11 +272,37 @@ export default function Home() {
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <input className="input-luxury" placeholder="Tên manga *" />
                 <textarea className="input-luxury" rows={3} placeholder="Mô tả câu chuyện..." style={{ resize: "none" }} />
-                <div onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onClick={() => document.getElementById('cover-upload')?.click()} style={{ border: `1px dashed ${dragOver ? "#c9a84c" : "rgba(201,168,76,0.2)"}`, borderRadius: "8px", padding: "32px", textAlign: "center", cursor: "pointer", transition: "all 0.3s", background: dragOver ? "rgba(201,168,76,0.05)" : "transparent" }}>
-  <div style={{ fontSize: 28, marginBottom: 10 }}>🖼</div>
-  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.35)", letterSpacing: "0.05em" }}>KÉO THẢ ẢNH BÌA VÀO ĐÂY</div>
-  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#c9a84c", marginTop: 8 }}>hoặc Click để tải lên từ PC</div>
-  <input id="cover-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const file = e.target.files?.[0]; if (file) console.log("Cover:", file.name); }} />
+                <div
+  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+  onDragLeave={() => setDragOver(false)}
+  onDrop={e => {
+    e.preventDefault(); setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setCoverImage(file);
+      setCoverPreview(URL.createObjectURL(file));
+    }
+  }}
+  onClick={() => document.getElementById('cover-upload')?.click()}
+  style={{ border: `1px dashed ${dragOver ? "#c9a84c" : coverPreview ? "#c9a84c" : "rgba(201,168,76,0.2)"}`, borderRadius: "8px", padding: coverPreview ? "8px" : "32px", textAlign: "center", cursor: "pointer", transition: "all 0.3s", background: dragOver ? "rgba(201,168,76,0.05)" : "transparent", position: "relative" }}
+>
+  {coverPreview ? (
+    <div style={{ position: "relative" }}>
+      <img src={coverPreview} style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: "6px" }} />
+      <div style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.7)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }} onClick={e => { e.stopPropagation(); setCoverImage(null); setCoverPreview(""); }}>✕</div>
+      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#c9a84c", marginTop: 8 }}>✓ Đã chọn ảnh bìa</div>
+    </div>
+  ) : (
+    <>
+      <div style={{ fontSize: 28, marginBottom: 10 }}>🖼</div>
+      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.35)", letterSpacing: "0.05em" }}>KÉO THẢ ẢNH BÌA VÀO ĐÂY</div>
+      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#c9a84c", marginTop: 8 }}>hoặc Click để tải lên từ PC</div>
+    </>
+  )}
+  <input id="cover-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+    const file = e.target.files?.[0];
+    if (file) { setCoverImage(file); setCoverPreview(URL.createObjectURL(file)); }
+  }} />
 </div>
               </div>
             )}
@@ -289,9 +324,15 @@ export default function Home() {
 
             <div style={{ display: "flex", gap: "12px", marginTop: 32 }}>
               {uploadStep > 1 && <button onClick={() => setUploadStep(s => s - 1)} style={{ flex: 1, padding: "13px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(201,168,76,0.15)", color: "rgba(240,230,208,0.5)", fontFamily: "'Inter', sans-serif", fontSize: 13, cursor: "pointer", letterSpacing: "0.08em" }}>← QUAY LẠI</button>}
-              <button className="gold-btn" onClick={() => uploadStep < 3 ? setUploadStep(s => s + 1) : setShowUpload(false)} style={{ flex: 2, padding: "13px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em" }}>
-                {uploadStep === 3 ? "✦ ĐĂNG MANGA" : "TIẾP THEO →"}
-              </button>
+              <button className="gold-btn" onClick={() => {
+  if (uploadStep === 1 && !coverPreview) {
+    alert("Vui lòng tải ảnh bìa lên!");
+    return;
+  }
+  uploadStep < 3 ? setUploadStep(s => s + 1) : setShowUpload(false);
+}} style={{ flex: 2, padding: "13px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em" }}>
+  {uploadStep === 3 ? "✦ ĐĂNG MANGA" : "TIẾP THEO →"}
+</button>
             </div>
           </div>
         </div>

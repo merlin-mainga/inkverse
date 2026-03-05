@@ -139,16 +139,16 @@ export default function Home() {
         </div>
 
         <h1 style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: "clamp(48px, 8vw, 96px)", lineHeight: 1.0, marginBottom: 8, letterSpacing: "0.02em" }}>
-  <span className="title-gradient">THẾ GIỚI MA</span><span style={{ color: "#c9a84c", textShadow: "0 0 30px rgba(201,168,76,0.8), 0 0 60px rgba(201,168,76,0.4)", WebkitTextFillColor: "#c9a84c" }}>I</span><span className="title-gradient">NGA</span>
+  <span className="title-gradient">THẾ GIỚI M</span><span style={{ color: "#c9a84c", textShadow: "0 0 30px rgba(201,168,76,0.8), 0 0 60px rgba(201,168,76,0.4)", WebkitTextFillColor: "#c9a84c" }}>AI</span><span className="title-gradient">NGA</span>
 </h1>
        <h1 style={{ fontFamily: "'Cinzel', serif", fontWeight: 400, fontSize: "clamp(32px, 5vw, 64px)", lineHeight: 1.2, marginBottom: 32, letterSpacing: "0.15em", color: "rgba(240,230,208,0.4)" }}>
-  MA<span style={{ color: "#c9a84c", textShadow: "0 0 20px rgba(201,168,76,0.6)", fontWeight: 700 }}>I</span>NGA · LÀ KHÔNG CÓ GIỚI HẠN
+  M<span style={{ color: "#c9a84c", textShadow: "0 0 20px rgba(201,168,76,0.6)", fontWeight: 700 }}>AI</span>NGA · KHÔNG CÓ GIỚI HẠN
 </h1>
 
         <div className="hero-line" style={{ maxWidth: 300, margin: "0 auto 32px" }} />
 
         <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(16px, 2vw, 20px)", color: "rgba(240,230,208,0.45)", maxWidth: 520, margin: "0 auto 48px", lineHeight: 1.8, fontWeight: 300, letterSpacing: "0.03em" }}>
-          Mainga là sự kết hợp giữa Manga & AI. Nơi mà chính bạn là "main" của câu chuyện của mình.
+          Mainga là sự kết hợp giữa Manga & AI. Nơi mà chính bạn là "main" trong câu chuyện của mình.
         </p>
 
         {/* SEARCH */}

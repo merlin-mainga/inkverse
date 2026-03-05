@@ -124,7 +124,7 @@ export default function BecomeAuthor() {
             <div className="float" style={{ fontSize: 72, marginBottom: 24 }}>🎉</div>
             <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: 28, color: "#c9a84c", marginBottom: 16, letterSpacing: "0.08em" }}>CHÀO MỪNG TÁC GIẢ!</h2>
             <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 15, color: "rgba(240,230,208,0.5)", lineHeight: 1.8, marginBottom: 40 }}>Tài khoản tác giả đã được tạo! Hãy đăng nhập và bắt đầu đăng manga đầu tiên.</p>
-            <button className="gold-btn" onClick={() => router.push("/")} style={{ padding: "14px 32px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: "0.1em" }}>✦ BẮT ĐẦU NGAY</button>
+            <button className="gold-btn" onClick={() => router.push("/become-author")} style={{ padding: "14px 32px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: "0.1em" }}>✦ BẮT ĐẦU NGAY</button>
           </div>
         )}
       </div>

@@ -117,7 +117,7 @@ export default function Home() {
           ))}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button className="gold-btn" onClick={() => setShowUpload(true)} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 20px", borderRadius: "6px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: "0.05em" }}>✦ Đăng Manga</button>
+          <button className="gold-btn" onClick={() => isLoggedIn ? setShowUpload(true) : setShowAuth(true)}
           {isLoggedIn ? (
             <div onClick={() => router.push("/profile")} style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #c9a84c, #8b6914)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, boxShadow: "0 0 15px rgba(201,168,76,0.3)" }}>👤</div>
           ) : (

@@ -21,6 +21,7 @@ const [session, setSession] = useState<any>(null);
 const [coverPreview, setCoverPreview] = useState<string>("");
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
@@ -103,6 +104,11 @@ const [coverPreview, setCoverPreview] = useState<string>("");
 
         @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         .title-gradient { background: linear-gradient(135deg, #f0e6d0, #c9a84c, #f0e6d0, #8b6914, #c9a84c); background-size: 300% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: gradientMove 5s ease infinite; }
+        @media (max-width: 768px) {
+  .desktop-menu { display: none !important; }
+  .mobile-menu-btn { display: flex !important; }
+  .mobile-menu-dropdown { display: flex !important; }
+}
       `}</style>
 
       {/* AMBIENT BACKGROUND */}
@@ -112,28 +118,56 @@ const [coverPreview, setCoverPreview] = useState<string>("");
       </div>
 
       {/* NAVBAR */}
-      <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(8,8,8,0.92)", borderBottom: "1px solid rgba(201,168,76,0.12)", backdropFilter: "blur(20px)", padding: "0 40px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <img src="/logo.png" alt="logo" style={{ width: 38, height: 38, borderRadius: "8px", objectFit: "contain" }} />
-          <div>
-            <div style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 18, letterSpacing: "0.12em", color: "#f0e6d0" }}>M<span style={{ color: "#c9a84c", textShadow: "0 0 15px rgba(201,168,76,0.8)", fontWeight: 700 }}>AI</span>NGA</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9, letterSpacing: "0.3em", color: "#c9a84c", textTransform: "uppercase", marginTop: -2 }}>AI Manga Platform</div>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
-          {["Khám Phá", "Bảng Xếp Hạng", "Tác Giả"].map(item => (
-            <span key={item} className="nav-link" style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.5)", letterSpacing: "0.05em" }}>{item}</span>
-          ))}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button className="gold-btn" onClick={() => isLoggedIn ? setShowUpload(true) : setShowAuth(true)} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 20px", borderRadius: "6px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: "0.05em" }}>✦ Đăng Manga</button>
-{isLoggedIn ? (
-            <div onClick={() => router.push("/profile")} style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #c9a84c, #8b6914)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, boxShadow: "0 0 15px rgba(201,168,76,0.3)" }}>👤</div>
-          ) : (
-            <button onClick={() => setShowAuth(true)} style={{ background: "transparent", border: "1px solid rgba(201,168,76,0.3)", borderRadius: "6px", padding: "8px 18px", fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.6)", cursor: "pointer", letterSpacing: "0.05em" }}>Đăng nhập</button>
-          )}
-        </div>
-      </nav>
+<nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(8,8,8,0.92)", borderBottom: "1px solid rgba(201,168,76,0.12)", backdropFilter: "blur(20px)", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
+  <div onClick={() => router.push("/")} style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }}>
+    <img src="/logo.png" alt="logo" style={{ width: 36, height: 36, borderRadius: "8px", objectFit: "contain" }} />
+    <div>
+      <div style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 17, letterSpacing: "0.1em" }}>M<span style={{ color: "#c9a84c" }}>AI</span>NGA</div>
+      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 8, letterSpacing: "0.3em", color: "#c9a84c", textTransform: "uppercase" }}>AI Manga Platform</div>
+    </div>
+  </div>
+
+  {/* DESKTOP MENU */}
+  <div className="desktop-menu" style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+    {["Khám Phá", "Bảng Xếp Hạng", "Tác Giả"].map(item => (
+      <span key={item} className="nav-link" style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.5)", letterSpacing: "0.05em", cursor: "pointer" }}>{item}</span>
+    ))}
+  </div>
+
+  {/* DESKTOP BUTTONS */}
+  <div className="desktop-menu" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+    <button className="gold-btn" onClick={() => isLoggedIn ? setShowUpload(true) : setShowAuth(true)} style={{ padding: "9px 20px", borderRadius: "6px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600 }}>✦ Đăng Manga</button>
+    {isLoggedIn ? (
+      <div onClick={() => router.push("/profile")} style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #c9a84c, #8b6914)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16 }}>👤</div>
+    ) : (
+      <button onClick={() => setShowAuth(true)} style={{ background: "transparent", border: "1px solid rgba(201,168,76,0.3)", borderRadius: "6px", padding: "8px 18px", fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.6)", cursor: "pointer" }}>Đăng nhập</button>
+    )}
+  </div>
+
+  {/* HAMBURGER */}
+  <button className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ display: "none", flexDirection: "column", gap: "5px", background: "transparent", border: "none", cursor: "pointer", padding: "8px" }}>
+    <div style={{ width: 24, height: 2, background: menuOpen ? "#c9a84c" : "#f0e6d0", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
+    <div style={{ width: 24, height: 2, background: "#c9a84c", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
+    <div style={{ width: 24, height: 2, background: menuOpen ? "#c9a84c" : "#f0e6d0", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
+  </button>
+</nav>
+
+{/* MOBILE DROPDOWN MENU */}
+{menuOpen && (
+  <div className="mobile-menu-dropdown" style={{ position: "fixed", top: 64, left: 0, right: 0, zIndex: 49, background: "rgba(8,8,8,0.98)", borderBottom: "1px solid rgba(201,168,76,0.15)", backdropFilter: "blur(20px)", padding: "20px 24px", display: "none", flexDirection: "column", gap: "4px" }}>
+    {["Khám Phá", "Bảng Xếp Hạng", "Tác Giả"].map(item => (
+      <div key={item} onClick={() => setMenuOpen(false)} style={{ padding: "14px 0", fontFamily: "'Inter', sans-serif", fontSize: 15, color: "rgba(240,230,208,0.6)", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer", letterSpacing: "0.05em" }}>{item}</div>
+    ))}
+    <div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: "10px" }}>
+      <button className="gold-btn" onClick={() => { setMenuOpen(false); isLoggedIn ? setShowUpload(true) : setShowAuth(true); }} style={{ width: "100%", padding: "13px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 600 }}>✦ Đăng Manga</button>
+      {isLoggedIn ? (
+        <button onClick={() => { setMenuOpen(false); router.push("/profile"); }} style={{ width: "100%", padding: "13px", background: "transparent", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "8px", color: "#c9a84c", fontFamily: "'Inter', sans-serif", fontSize: 14, cursor: "pointer" }}>👤 Trang Cá Nhân</button>
+      ) : (
+        <button onClick={() => { setMenuOpen(false); setShowAuth(true); }} style={{ width: "100%", padding: "13px", background: "transparent", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "8px", color: "rgba(240,230,208,0.6)", fontFamily: "'Inter', sans-serif", fontSize: 14, cursor: "pointer" }}>Đăng nhập</button>
+      )}
+    </div>
+  </div>
+)}
 
       {/* HERO */}
       <div style={{ position: "relative", zIndex: 1, padding: "100px 40px 80px", textAlign: "center", overflow: "hidden" }}>

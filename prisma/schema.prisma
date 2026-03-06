@@ -23,6 +23,9 @@ model User {
   ratings       Rating[]
   readHistory   ReadHistory[]
   sessions      Session[]
+  role      String   @default("user")
+  emailVerifyToken  String?
+
 }
 
 model Manga {

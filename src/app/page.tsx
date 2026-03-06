@@ -376,18 +376,13 @@ return;
             <div style={{ display: "flex", gap: "12px", marginTop: 32 }}>
               {uploadStep > 1 && <button onClick={() => setUploadStep(s => s - 1)} style={{ flex: 1, padding: "13px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(201,168,76,0.15)", color: "rgba(240,230,208,0.5)", fontFamily: "'Inter', sans-serif", fontSize: 13, cursor: "pointer", letterSpacing: "0.08em" }}>← QUAY LẠI</button>}
               <button className="gold-btn" onClick={() => {
-  if (uploadStep === 1 && !coverPreview) {
-    alert("Vui lòng tải ảnh bìa lên!");
-    return;
-  }
-<button className="gold-btn" onClick={() => {
-  if (uploadStep === 1 && !coverPreview) { alert("Vui lòng tải ảnh bìa!"); return; }
-  if (uploadStep === 2 && uploadedPages.length === 0) { alert("Vui lòng tải ít nhất 1 trang manga!"); return; }
-  if (uploadStep === 3) { setShowUpload(false); router.push("/dashboard"); return; }
-  setUploadStep(s => s + 1);
-}} style={{ flex: 2, padding: "13px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em" }}>
-  {uploadStep === 3 ? "✦ ĐĂNG MANGA" : "TIẾP THEO →"}
-</button>
+                if (uploadStep === 1 && !coverPreview) { alert("Vui lòng tải ảnh bìa!"); return; }
+                if (uploadStep === 2 && uploadedPages.length === 0) { alert("Vui lòng tải ít nhất 1 trang manga!"); return; }
+                if (uploadStep === 3) { setShowUpload(false); router.push("/dashboard"); return; }
+                setUploadStep(s => s + 1);
+              }} style={{ flex: 2, padding: "13px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em" }}>
+                {uploadStep === 3 ? "✦ ĐĂNG MANGA" : "TIẾP THEO →"}
+              </button>
             </div>
           </div>
         </div>

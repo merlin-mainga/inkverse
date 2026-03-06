@@ -358,12 +358,50 @@ return;
               </div>
             )}
             {uploadStep === 2 && (
-  <div onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={e => { e.preventDefault(); setDragOver(false); }} onClick={() => document.getElementById('pages-upload')?.click()} style={{ border: `1px dashed ${dragOver ? "#c9a84c" : "rgba(201,168,76,0.2)"}`, borderRadius: "8px", padding: "60px 32px", textAlign: "center", cursor: "pointer", transition: "all 0.3s", background: dragOver ? "rgba(201,168,76,0.05)" : "transparent" }}>
-    <div className="float-anim" style={{ fontSize: 48, marginBottom: 16 }}>📂</div>
-    <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, color: "rgba(240,230,208,0.5)", marginBottom: 8 }}>Kéo thả ảnh manga vào đây</div>
-    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.25)", letterSpacing: "0.1em" }}>JPG · PNG · WEBP — TỐI ĐA 50 TRANG</div>
-    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#c9a84c", marginTop: 12 }}>hoặc Click để tải lên từ PC</div>
-    <input id="pages-upload" type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => { const files = Array.from(e.target.files || []); console.log("Pages:", files.length); }} />
+  <div>
+    <div
+      onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => {
+        e.preventDefault(); setDragOver(false);
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+        setUploadedPages(prev => [...prev, ...files].slice(0, 50));
+      }}
+      onClick={() => document.getElementById('pages-upload')?.click()}
+      style={{ border: `1px dashed ${dragOver ? "#c9a84c" : uploadedPages.length > 0 ? "#c9a84c" : "rgba(201,168,76,0.2)"}`, borderRadius: "8px", padding: uploadedPages.length > 0 ? "20px" : "60px 32px", textAlign: "center", cursor: "pointer", transition: "all 0.3s", background: dragOver ? "rgba(201,168,76,0.05)" : "transparent" }}
+    >
+      {uploadedPages.length > 0 ? (
+        <div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: "#c9a84c", marginBottom: 12 }}>✓ Đã chọn {uploadedPages.length} trang</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center" }}>
+            {uploadedPages.slice(0, 6).map((f, i) => (
+              <div key={i} style={{ width: 60, height: 80, borderRadius: "4px", overflow: "hidden", border: "1px solid rgba(201,168,76,0.2)" }}>
+                <img src={URL.createObjectURL(f)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            ))}
+            {uploadedPages.length > 6 && <div style={{ width: 60, height: 80, borderRadius: "4px", background: "rgba(201,168,76,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#c9a84c", fontSize: 13 }}>+{uploadedPages.length - 6}</div>}
+          </div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "rgba(240,230,208,0.3)", marginTop: 10 }}>Click để thêm ảnh</div>
+        </div>
+      ) : (
+        <>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📂</div>
+          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, color: "rgba(240,230,208,0.5)", marginBottom: 8 }}>Kéo thả ảnh manga vào đây</div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.25)", letterSpacing: "0.1em" }}>JPG · PNG · WEBP — TỐI ĐA 50 TRANG</div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#c9a84c", marginTop: 12 }}>hoặc Click để tải lên từ PC</div>
+        </>
+      )}
+      <input id="pages-upload" type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => {
+        const files = Array.from(e.target.files || []).filter(f => f.type.startsWith("image/"));
+        setUploadedPages(prev => [...prev, ...files].slice(0, 50));
+      }} />
+    </div>
+    {uploadedPages.length > 0 && (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.4)" }}>{uploadedPages.length} trang đã chọn</div>
+        <button onClick={() => setUploadedPages([])} style={{ background: "transparent", border: "none", color: "#ff5050", fontFamily: "'Inter', sans-serif", fontSize: 12, cursor: "pointer" }}>✕ Xóa tất cả</button>
+      </div>
+    )}
   </div>
 )}
             {uploadStep === 3 && (

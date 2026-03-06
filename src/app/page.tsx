@@ -492,12 +492,10 @@ async function handleUploadManga() {
         <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.4)" }}>{uploadedPages.length} trang đã chọn</div>
         <button onClick={() => setUploadedPages([])} style={{ background: "transparent", border: "none", color: "#ff5050", fontFamily: "'Inter', sans-serif", fontSize: 12, cursor: "pointer" }}>✕ Xóa tất cả</button>
       </div>
-    </div>
+    )}
+  </div>
 </div>
 )}
-
-            {uploadStep === 3 && (
-
             {uploadStep === 3 && (
               <div style={{ textAlign: "center", padding: "20px 0" }}>
                 <div className="float-anim" style={{ fontSize: 56, marginBottom: 20 }}>🎉</div>

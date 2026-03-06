@@ -35,13 +35,21 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as any).role || "user";
       }
       if (account?.provider === "google") {
-        const dbUser = await prisma.user.findUnique({
+        let dbUser = await prisma.user.findUnique({
           where: { email: token.email! },
         });
-        if (dbUser) {
-          token.id = dbUser.id;
-          token.role = (dbUser as any).role || "user";
+        if (!dbUser) {
+          dbUser = await prisma.user.create({
+            data: {
+              email: token.email!,
+              name: token.name || "Google User",
+              image: token.picture as string || null,
+              role: "user",
+            },
+          });
         }
+        token.id = dbUser.id;
+        token.role = (dbUser as any).role || "user";
       }
       return token;
     },
@@ -53,7 +61,6 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
 };

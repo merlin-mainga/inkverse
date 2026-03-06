@@ -283,7 +283,7 @@ return;
               <input className="input-luxury" type="password" placeholder="Mật khẩu..." value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
             </div>
             {msg && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, marginBottom: 16, textAlign: "center", color: msg.includes("✅") ? "#c9a84c" : "#ff6b6b" }}>{msg}</div>}
-            <button className="gold-btn" onClick={handlesabled={loading} style={{ width: "100%", padding: "14px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 20, letterSpacing: "0.1em", opacity: loading ? 0.7 : 1 }}>
+            <button className="gold-btn" onClick={handleAuth} disabled={loading} style={{ width: "100%", padding: "14px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 20, letterSpacing: "0.1em", opacity: loading ? 0.7 : 1 }}>
               {loading ? "ĐANG XỬ LÝ..." : authMode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: 20 }}>

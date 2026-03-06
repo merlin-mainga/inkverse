@@ -25,6 +25,8 @@ const [coverPreview, setCoverPreview] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [msg, setMsg] = useState("");
+  const [uploadForm, setUploadForm] = useState({ title: "", description: "", genre: [] as string[] });
+const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
   import("next-auth/react").then(({ getSession }) => {
@@ -70,7 +72,61 @@ return;
   } catch { setMsg("❌ Lỗi kết nối!"); }
   setLoading(false);
 }
+async function handleUploadManga() {
+  setUploading(true);
+  try {
+    // Upload ảnh bìa lên Cloudinary
+    let coverUrl = "";
+    if (coverImage) {
+      const formData = new FormData();
+      formData.append("file", coverImage);
+      formData.append("upload_preset", "unsigned_preset");
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      coverUrl = data.secure_url;
+    }
 
+    // Upload các trang manga
+    const pageUrls: string[] = [];
+    for (const file of uploadedPages) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "unsigned_preset");
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      pageUrls.push(data.secure_url);
+    }
+
+    // Tạo manga trong database
+    const res = await fetch("/api/manga", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: uploadForm.title,
+        description: uploadForm.description,
+        coverImage: coverUrl,
+        pages: pageUrls,
+        genre: uploadForm.genre,
+      }),
+    });
+
+    if (res.ok) {
+      setShowUpload(false);
+      router.push("/dashboard");
+    } else {
+      alert("Lỗi đăng manga!");
+    }
+  } catch (e) {
+    alert("Lỗi kết nối!");
+  }
+  setUploading(false);
+}
   return (
     <div style={{ minHeight: "100vh", background: "#080808", color: "#f0e6d0", fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
       <style>{`
@@ -321,8 +377,8 @@ return;
 
             {uploadStep === 1 && (
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <input className="input-luxury" placeholder="Tên manga *" />
-                <textarea className="input-luxury" rows={3} placeholder="Mô tả câu chuyện..." style={{ resize: "none" }} />
+              <input className="input-luxury" placeholder="Tên manga *" onChange={e => setUploadForm(f => ({ ...f, title: e.target.value }))} value={uploadForm.title} />
+                <textarea className="input-luxury" placeholder="Mô tả câu chuyện..." rows={3} onChange={e => setUploadForm(f => ({ ...f, description: e.target.value }))} value={uploadForm.description} style={{ resize: "none" }} />
                 <div
   onDragOver={e => { e.preventDefault(); setDragOver(true); }}
   onDragLeave={() => setDragOver(false)}
@@ -416,7 +472,7 @@ return;
               <button className="gold-btn" onClick={() => {
                 if (uploadStep === 1 && !coverPreview) { alert("Vui lòng tải ảnh bìa!"); return; }
                 if (uploadStep === 2 && uploadedPages.length === 0) { alert("Vui lòng tải ít nhất 1 trang manga!"); return; }
-                if (uploadStep === 3) { setShowUpload(false); router.push("/dashboard"); return; }
+                if (uploadStep === 3) { handleUploadManga(); return; }
                 setUploadStep(s => s + 1);
               }} style={{ flex: 2, padding: "13px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em" }}>
                 {uploadStep === 3 ? "✦ ĐĂNG MANGA" : "TIẾP THEO →"}

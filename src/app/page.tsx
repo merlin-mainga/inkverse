@@ -27,6 +27,8 @@ const [coverPreview, setCoverPreview] = useState<string>("");
   const [msg, setMsg] = useState("");
   const [uploadForm, setUploadForm] = useState({ title: "", description: "", genre: [] as string[] });
 const [uploading, setUploading] = useState(false);
+const [chapterNum, setChapterNum] = useState(1);
+const [chapterTitle, setChapterTitle] = useState("");
 
   useEffect(() => {
   import("next-auth/react").then(({ getSession }) => {
@@ -107,23 +109,36 @@ async function handleUploadManga() {
     }
 
     // Tạo manga trong database
-    const res = await fetch("/api/manga", {
+    const mangaRes = await fetch("/api/manga", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: uploadForm.title,
         description: uploadForm.description,
         coverImage: coverUrl,
-        pages: pageUrls,
         genre: uploadForm.genre,
       }),
     });
 
-    if (res.ok) {
+    if (!mangaRes.ok) { alert("Lỗi tạo manga!"); setUploading(false); return; }
+    const manga = await mangaRes.json();
+
+    // Tạo chapter với ảnh
+    const chapterRes = await fetch(`/api/manga/${manga.id}/chapters`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chapterNum,
+        title: chapterTitle || `Chapter ${chapterNum}`,
+        pages: pageUrls,
+      }),
+    });
+
+    if (chapterRes.ok) {
       setShowUpload(false);
       router.push("/dashboard");
     } else {
-      alert("Lỗi đăng manga!");
+      alert("Lỗi tạo chapter!");
     }
   } catch (e) {
     alert("Lỗi kết nối!");
@@ -417,6 +432,23 @@ async function handleUploadManga() {
               </div>
             )}
             {uploadStep === 2 && (
+               <div>
+    <div style={{ display: "flex", gap: "12px", marginBottom: 16 }}>
+      <input
+        style={{ flex: 1, padding: "12px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "8px", color: "#f0e6d0", fontFamily: "'Inter', sans-serif", fontSize: 14, outline: "none" }}
+        placeholder="Số chapter *"
+        type="number"
+        min={1}
+        value={chapterNum}
+        onChange={e => setChapterNum(parseInt(e.target.value) || 1)}
+      />
+      <input
+        style={{ flex: 2, padding: "12px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "8px", color: "#f0e6d0", fontFamily: "'Inter', sans-serif", fontSize: 14, outline: "none" }}
+        placeholder="Tên chapter (VD: Khởi Đầu)"
+        value={chapterTitle}
+        onChange={e => setChapterTitle(e.target.value)}
+      />
+    </div>
   <div>
     <div
       onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -463,6 +495,7 @@ async function handleUploadManga() {
     )}
   </div>
 )}
+
             {uploadStep === 3 && (
               <div style={{ textAlign: "center", padding: "20px 0" }}>
                 <div className="float-anim" style={{ fontSize: 56, marginBottom: 20 }}>🎉</div>

@@ -388,7 +388,6 @@ return;
 }} style={{ flex: 2, padding: "13px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em" }}>
   {uploadStep === 3 ? "✦ ĐĂNG MANGA" : "TIẾP THEO →"}
 </button>
-</button>
             </div>
           </div>
         </div>

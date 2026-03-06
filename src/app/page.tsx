@@ -497,11 +497,25 @@ async function handleUploadManga() {
 </div>
 )}
             {uploadStep === 3 && (
-              <div style={{ textAlign: "center", padding: "20px 0" }}>
-                <div className="float-anim" style={{ fontSize: 56, marginBottom: 20 }}>🎉</div>
-                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, color: "rgba(240,230,208,0.6)", lineHeight: 1.7 }}>Manga của bạn sẵn sàng được đăng lên thế giới!</div>
-              </div>
-            )}
+  <div style={{ textAlign: "center", padding: "20px 0" }}>
+    {uploading ? (
+      <>
+        <div style={{ fontSize: 48, marginBottom: 20 }}>⏳</div>
+        <div style={{ fontFamily: "'Cinzel', serif", fontSize: 18, color: "#c9a84c", marginBottom: 12 }}>ĐANG TẢI LÊN...</div>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.4)", marginBottom: 24 }}>Vui lòng đợi, đừng đóng trang này</div>
+        <div style={{ width: "100%", height: 4, background: "rgba(201,168,76,0.1)", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ height: "100%", background: "linear-gradient(90deg,#c9a84c,#8b6914)", borderRadius: 4, animation: "loading-bar 1.5s ease-in-out infinite" }} />
+        </div>
+        <style>{`@keyframes loading-bar { 0% { width: 0% } 50% { width: 70% } 100% { width: 100% } }`}</style>
+      </>
+    ) : (
+      <>
+        <div className="float-anim" style={{ fontSize: 56, marginBottom: 20 }}>🎉</div>
+        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, color: "rgba(240,230,208,0.6)", lineHeight: 1.7 }}>Manga của bạn sẵn sàng được đăng lên thế giới!</div>
+      </>
+    )}
+  </div>
+)}
 
             <div style={{ display: "flex", gap: "12px", marginTop: 32 }}>
               {uploadStep > 1 && <button onClick={() => setUploadStep(s => s - 1)} style={{ flex: 1, padding: "13px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(201,168,76,0.15)", color: "rgba(240,230,208,0.5)", fontFamily: "'Inter', sans-serif", fontSize: 13, cursor: "pointer", letterSpacing: "0.08em" }}>← QUAY LẠI</button>}

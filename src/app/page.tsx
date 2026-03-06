@@ -14,6 +14,8 @@ export default function Home() {
   const [authMode, setAuthMode] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 const [session, setSession] = useState<any>(null);
+const [uploadedPages, setUploadedPages] = useState<File[]>([]);
+const [uploadingPages, setUploadingPages] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [uploadStep, setUploadStep] = useState(1);
   const [dragOver, setDragOver] = useState(false);
@@ -52,9 +54,13 @@ const [coverPreview, setCoverPreview] = useState<string>("");
       });
       const data = await res.json();
       if (!res.ok) { setMsg("❌ " + data.error); setLoading(false); return; }
-      setMsg("✅ " + (data.message || "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản."));
-      setLoading(false);
-      return;
+      setMsg("✅ Đăng ký thành công!");
+// Auto login sau khi đăng ký
+const { signIn } = await import("next-auth/react");
+const loginRes = await signIn("credentials", { email: form.email, password: form.password, redirect: false });
+if (loginRes?.ok) { setIsLoggedIn(true); setShowAuth(false); setMsg(""); }
+setLoading(false);
+return;
     } else {
       const { signIn } = await import("next-auth/react");
       const res = await signIn("credentials", { email: form.email, password: form.password, redirect: false });
@@ -277,7 +283,7 @@ const [coverPreview, setCoverPreview] = useState<string>("");
               <input className="input-luxury" type="password" placeholder="Mật khẩu..." value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
             </div>
             {msg && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, marginBottom: 16, textAlign: "center", color: msg.includes("✅") ? "#c9a84c" : "#ff6b6b" }}>{msg}</div>}
-            <button className="gold-btn" onClick={handleAuth} disabled={loading} style={{ width: "100%", padding: "14px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 20, letterSpacing: "0.1em", opacity: loading ? 0.7 : 1 }}>
+            <button className="gold-btn" onClick={handlesabled={loading} style={{ width: "100%", padding: "14px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 20, letterSpacing: "0.1em", opacity: loading ? 0.7 : 1 }}>
               {loading ? "ĐANG XỬ LÝ..." : authMode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: 20 }}>
@@ -374,9 +380,14 @@ const [coverPreview, setCoverPreview] = useState<string>("");
     alert("Vui lòng tải ảnh bìa lên!");
     return;
   }
-  uploadStep < 3 ? setUploadStep(s => s + 1) : setShowUpload(false);
+<button className="gold-btn" onClick={() => {
+  if (uploadStep === 1 && !coverPreview) { alert("Vui lòng tải ảnh bìa!"); return; }
+  if (uploadStep === 2 && uploadedPages.length === 0) { alert("Vui lòng tải ít nhất 1 trang manga!"); return; }
+  if (uploadStep === 3) { setShowUpload(false); router.push("/dashboard"); return; }
+  setUploadStep(s => s + 1);
 }} style={{ flex: 2, padding: "13px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em" }}>
   {uploadStep === 3 ? "✦ ĐĂNG MANGA" : "TIẾP THEO →"}
+</button>
 </button>
             </div>
           </div>

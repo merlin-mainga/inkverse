@@ -74,6 +74,9 @@ return;
 }
 async function handleUploadManga() {
   setUploading(true);
+  console.log("uploadForm:", uploadForm);
+  console.log("coverImage:", coverImage);
+  console.log("uploadedPages:", uploadedPages.length);
   try {
     // Upload ảnh bìa lên Cloudinary
     let coverUrl = "";

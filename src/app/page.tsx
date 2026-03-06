@@ -42,26 +42,28 @@ const [coverPreview, setCoverPreview] = useState<string>("");
   }
 
   async function handleAuth() {
-    setLoading(true); setMsg("");
-    try {
-      if (authMode === "register") {
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        });
-        const data = await res.json();
-        if (res.ok) { setMsg("✅ Đăng ký thành công! Hãy đăng nhập."); setAuthMode("login"); }
-        else setMsg("❌ " + data.error);
-      } else {
-        const { signIn } = await import("next-auth/react");
-        const res = await signIn("credentials", { email: form.email, password: form.password, redirect: false });
-        if (res?.ok) { setIsLoggedIn(true); setShowAuth(false); }
-        else setMsg("❌ Email hoặc mật khẩu sai!");
-      }
-    } catch { setMsg("❌ Lỗi kết nối!"); }
-    setLoading(false);
-  }
+  setLoading(true); setMsg("");
+  try {
+    if (authMode === "register") {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) { setMsg("❌ " + data.error); setLoading(false); return; }
+      setMsg("✅ " + (data.message || "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản."));
+      setLoading(false);
+      return;
+    } else {
+      const { signIn } = await import("next-auth/react");
+      const res = await signIn("credentials", { email: form.email, password: form.password, redirect: false });
+      if (res?.ok) { setIsLoggedIn(true); setShowAuth(false); }
+      else setMsg("❌ Email hoặc mật khẩu sai!");
+    }
+  } catch { setMsg("❌ Lỗi kết nối!"); }
+  setLoading(false);
+}
 
   return (
     <div style={{ minHeight: "100vh", background: "#080808", color: "#f0e6d0", fontFamily: "'Cormorant Garamond', Georgia, serif" }}>

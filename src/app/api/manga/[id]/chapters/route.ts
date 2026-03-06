@@ -14,8 +14,8 @@ export async function POST(
     return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
   const manga = await prisma.manga.findUnique({ where: { id } });
-  if (!manga || manga.authorId !== (session.user as any).id)
-    return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
+  if (!manga)
+  return NextResponse.json({ error: "Không tìm thấy manga" }, { status: 404 });
 
   const { title, chapterNum, pages } = await req.json();
   let pageUrls: string[] = pages;

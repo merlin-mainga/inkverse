@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendVerificationEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,29 +11,31 @@ export async function POST(req: NextRequest) {
     if (!email || !password || !name)
       return NextResponse.json({ error: "Thiếu thông tin" }, { status: 400 });
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email))
+      return NextResponse.json({ error: "Email không hợp lệ" }, { status: 400 });
+
+    if (password.length < 6)
+      return NextResponse.json({ error: "Mật khẩu phải có ít nhất 6 ký tự" }, { status: 400 });
+
     const exists = await prisma.user.findUnique({ where: { email } });
     if (exists)
       return NextResponse.json({ error: "Email đã tồn tại" }, { status: 400 });
 
     const hashed = await bcrypt.hash(password, 12);
-    
-    // Tạo user trước không có role
+    const token = crypto.randomBytes(32).toString("hex");
+
     const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashed,
-      },
-    });
+  data: { name, email, password: hashed, emailVerifyToken: token },
+});
 
-    // Nếu là author thì update role sau
-    if (role === "author") {
-      await prisma.$executeRaw`UPDATE "User" SET role = 'author' WHERE id = ${user.id}`;
-    }
+if (role === "author") {
+  await prisma.$executeRaw`UPDATE "User" SET role = 'author' WHERE id = ${user.id}`;
+}
 
-    return NextResponse.json({ id: user.id, name: user.name, email: user.email }, { status: 201 });
-  } catch (e: any) {
-    console.error("Register error:", e);
-    return NextResponse.json({ error: e.message || "Lỗi server" }, { status: 500 });
-  }
+return NextResponse.json({ message: "Đăng ký thành công!" }, { status: 201 });
+} catch (e: any) {
+  console.error("Register error:", e);
+  return NextResponse.json({ error: e.message || "Lỗi server" }, { status: 500 });
+}
 }

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendVerificationEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,19 +21,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email đã tồn tại" }, { status: 400 });
 
     const hashed = await bcrypt.hash(password, 12);
-    const token = crypto.randomBytes(32).toString("hex");
 
-    const user = await prisma.user.create({
-  data: { name, email, password: hashed, emailVerifyToken: token },
-});
+    // Lưu role trực tiếp khi tạo user — không dùng raw SQL nữa
+    const validRole = role === "author" ? "author" : "user";
+    await prisma.user.create({
+      data: { name, email, password: hashed, role: validRole },
+    });
 
-if (role === "author") {
-  await prisma.$executeRaw`UPDATE "User" SET role = 'author' WHERE id = ${user.id}`;
-}
-
-return NextResponse.json({ message: "Đăng ký thành công!" }, { status: 201 });
-} catch (e: any) {
-  console.error("Register error:", e);
-  return NextResponse.json({ error: e.message || "Lỗi server" }, { status: 500 });
-}
+    return NextResponse.json({ message: "Đăng ký thành công!" }, { status: 201 });
+  } catch (e: any) {
+    console.error("Register error:", e);
+    return NextResponse.json({ error: e.message || "Lỗi server" }, { status: 500 });
+  }
 }

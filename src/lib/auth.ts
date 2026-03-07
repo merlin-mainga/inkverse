@@ -30,14 +30,15 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, account }) {
+      // Lần đầu login qua Credentials
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role || "user";
+        token.email = user.email;
       }
+
+      // Lần đầu login qua Google — tạo user nếu chưa có
       if (account?.provider === "google") {
-        let dbUser = await prisma.user.findUnique({
-          where: { email: token.email! },
-        });
+        let dbUser = await prisma.user.findUnique({ where: { email: token.email! } });
         if (!dbUser) {
           dbUser = await prisma.user.create({
             data: {
@@ -49,8 +50,18 @@ export const authOptions: NextAuthOptions = {
           });
         }
         token.id = dbUser.id;
-        token.role = (dbUser as any).role || "user";
       }
+
+      // LUÔN đọc role mới nhất từ DB mỗi lần refresh token
+      // Fix bug: user đăng ký thành tác giả nhưng token cũ vẫn giữ role "user"
+      if (token.email) {
+        const dbUser = await prisma.user.findUnique({ where: { email: token.email } });
+        if (dbUser) {
+          token.role = (dbUser as any).role || "user";
+          token.id = dbUser.id;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {

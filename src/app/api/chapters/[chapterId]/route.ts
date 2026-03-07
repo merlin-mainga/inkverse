@@ -6,9 +6,19 @@ export async function GET(
   { params }: { params: Promise<{ chapterId: string }> }
 ) {
   const { chapterId } = await params;
+
   const chapter = await prisma.chapter.findUnique({
     where: { id: chapterId },
   });
-  if (!chapter) return NextResponse.json({ error: "Không tìm thấy" }, { status: 404 });
+
+  if (!chapter)
+    return NextResponse.json({ error: "Không tìm thấy chapter" }, { status: 404 });
+
+  // Tăng view count mỗi lần đọc
+  await prisma.chapter.update({
+    where: { id: chapterId },
+    data: { views: { increment: 1 } },
+  });
+
   return NextResponse.json(chapter);
 }

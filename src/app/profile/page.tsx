@@ -4,30 +4,38 @@ import { useRouter } from "next/navigation";
 
 export default function Profile() {
   const router = useRouter();
-  const [session, setSession] = useState<any>(null);
+  const [user, setUser] = useState<any>(null); // từ DB — có role chính xác
   const [activeTab, setActiveTab] = useState<"history" | "following">("history");
   const [history, setHistory] = useState<any[]>([]);
   const [follows, setFollows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Lấy session để check đăng nhập, nhưng lấy role từ /api/me (DB)
     import("next-auth/react").then(({ getSession }) => {
-      getSession().then(s => {
+      getSession().then(async s => {
         if (!s) { router.push("/"); return; }
-        setSession(s);
-        Promise.all([
+
+        // Fetch role thực từ DB
+        const meRes = await fetch("/api/me");
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          setUser(meData.user);
+        }
+
+        // Fetch history + follows song song
+        const [h, f] = await Promise.all([
           fetch("/api/history").then(r => r.json()),
           fetch("/api/follow").then(r => r.json()),
-        ]).then(([h, f]) => {
-          setHistory(h.history || []);
-          setFollows(f.follows || []);
-          setLoading(false);
-        });
+        ]);
+        setHistory(h.history || []);
+        setFollows(f.follows || []);
+        setLoading(false);
       });
     });
   }, []);
 
-  const isAuthor = session?.user?.role === "author" || session?.user?.role === "admin";
+  const isAuthor = user?.role === "author" || user?.role === "admin";
 
   async function handleLogout() {
     const { signOut } = await import("next-auth/react");
@@ -49,7 +57,6 @@ export default function Profile() {
         .fade-up { animation: fadeUp 0.4s ease; }
         @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
         .float { animation: float 3s ease-in-out infinite; }
-        .hero-line { height: 1px; background: linear-gradient(90deg, transparent, #c9a84c, transparent); }
       `}</style>
 
       {/* NAVBAR */}
@@ -69,49 +76,47 @@ export default function Profile() {
       <div style={{ maxWidth: 860, margin: "0 auto", padding: "48px 24px" }}>
 
         {/* PROFILE HEADER */}
-        <div className="fade-up" style={{ display: "flex", alignItems: "center", gap: "24px", marginBottom: 40, padding: "32px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,168,76,0.12)", borderRadius: "16px" }}>
-          <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #c9a84c, #8b6914)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, flexShrink: 0 }}>
-            {session?.user?.image ? <img src={session.user.image} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} /> : "👤"}
+        <div className="fade-up" style={{ display: "flex", alignItems: "center", gap: "24px", marginBottom: 32, padding: "32px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,168,76,0.12)", borderRadius: "16px" }}>
+          <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #c9a84c, #8b6914)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, flexShrink: 0, overflow: "hidden" }}>
+            {user?.image ? <img src={user.image} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "👤"}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'Cinzel', serif", fontSize: 22, fontWeight: 700, color: "#f0e6d0", marginBottom: 6 }}>{session?.user?.name || "Người Dùng"}</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.4)", marginBottom: 10 }}>{session?.user?.email}</div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", borderRadius: "20px", background: isAuthor ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${isAuthor ? "rgba(201,168,76,0.3)" : "rgba(255,255,255,0.08)"}` }}>
-              <span style={{ fontSize: 12 }}>{isAuthor ? "✍️" : "📖"}</span>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: isAuthor ? "#c9a84c" : "rgba(240,230,208,0.4)", fontWeight: 500 }}>{isAuthor ? "Tác Giả" : "Độc Giả"}</span>
+            <div style={{ fontFamily: "'Cinzel', serif", fontSize: 22, fontWeight: 700, color: "#f0e6d0", marginBottom: 6 }}>{user?.name || "..."}</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.4)", marginBottom: 12 }}>{user?.email}</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 14px", borderRadius: "20px", background: isAuthor ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${isAuthor ? "rgba(201,168,76,0.35)" : "rgba(255,255,255,0.08)"}` }}>
+              <span style={{ fontSize: 13 }}>{isAuthor ? "✍️" : "📖"}</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: isAuthor ? "#c9a84c" : "rgba(240,230,208,0.4)", fontWeight: 600 }}>{isAuthor ? "Tác Giả" : "Độc Giả"}</span>
             </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end" }}>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 22, color: "#c9a84c", fontWeight: 600 }}>{follows.length}</div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)", letterSpacing: "0.1em" }}>THEO DÕI</div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 22, color: "#c9a84c", fontWeight: 600 }}>{history.length}</div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)", letterSpacing: "0.1em" }}>ĐÃ ĐỌC</div>
-            </div>
+          <div style={{ display: "flex", gap: "24px" }}>
+            {[["THEO DÕI", follows.length], ["ĐÃ ĐỌC", history.length]].map(([label, val]) => (
+              <div key={label as string} style={{ textAlign: "center" }}>
+                <div style={{ fontFamily: "'Cinzel', serif", fontSize: 24, color: "#c9a84c", fontWeight: 600 }}>{val}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "rgba(240,230,208,0.3)", letterSpacing: "0.15em", marginTop: 4 }}>{label as string}</div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* AUTHOR CTA — chỉ hiện với user thường */}
-        {!isAuthor && (
-          <div className="fade-up" style={{ marginBottom: 32, padding: "28px 32px", background: "linear-gradient(135deg, rgba(201,168,76,0.06), rgba(139,105,20,0.04))", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "20px", flexWrap: "wrap" }}>
+        {/* AUTHOR BANNER */}
+        {isAuthor ? (
+          <div className="fade-up" style={{ marginBottom: 32, padding: "24px 28px", background: "linear-gradient(135deg, rgba(201,168,76,0.08), rgba(139,105,20,0.04))", border: "1px solid rgba(201,168,76,0.25)", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "20px", flexWrap: "wrap" }}>
             <div>
-              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 16, color: "#c9a84c", marginBottom: 6, letterSpacing: "0.05em" }}>✦ Bạn muốn chia sẻ câu chuyện của mình?</div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.45)", lineHeight: 1.6 }}>Đăng ký trở thành tác giả — miễn phí, không giới hạn sáng tác.</div>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 15, color: "#c9a84c", marginBottom: 6, letterSpacing: "0.05em" }}>✦ Dành Cho Tác Giả</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.45)", lineHeight: 1.6 }}>Quản lý manga, thêm chapter mới, xem thống kê lượt đọc.</div>
             </div>
-            <button className="gold-btn" onClick={() => router.push("/become-author")} style={{ padding: "12px 28px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", letterSpacing: "0.05em" }}>✦ Trở Thành Tác Giả</button>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <button className="gold-btn" onClick={() => router.push("/dashboard")} style={{ padding: "11px 24px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700 }}>📊 Vào Dashboard</button>
+              <button onClick={() => router.push("/")} style={{ padding: "11px 20px", borderRadius: "8px", background: "transparent", border: "1px solid rgba(201,168,76,0.2)", color: "#c9a84c", fontFamily: "'Inter', sans-serif", fontSize: 13, cursor: "pointer" }}>+ Đăng Manga</button>
+            </div>
           </div>
-        )}
-
-        {/* AUTHOR CTA — nếu là tác giả thì dẫn dashboard */}
-        {isAuthor && (
-          <div className="fade-up" style={{ marginBottom: 32, padding: "24px 32px", background: "linear-gradient(135deg, rgba(201,168,76,0.06), rgba(139,105,20,0.04))", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "20px", flexWrap: "wrap" }}>
+        ) : (
+          <div className="fade-up" style={{ marginBottom: 32, padding: "24px 28px", background: "rgba(255,255,255,0.01)", border: "1px solid rgba(201,168,76,0.15)", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "20px", flexWrap: "wrap" }}>
             <div>
-              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 15, color: "#c9a84c", marginBottom: 6, letterSpacing: "0.05em" }}>📊 Bảng điều khiển tác giả</div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.45)" }}>Quản lý manga, thêm chapter, xem thống kê lượt đọc.</div>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 15, color: "#c9a84c", marginBottom: 6, letterSpacing: "0.05em" }}>✦ Bạn muốn chia sẻ câu chuyện của mình?</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.4)", lineHeight: 1.6 }}>Đăng ký trở thành tác giả — miễn phí, không giới hạn sáng tác.</div>
             </div>
-            <button className="gold-btn" onClick={() => router.push("/dashboard")} style={{ padding: "12px 28px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>Vào Dashboard →</button>
+            <button className="gold-btn" onClick={() => router.push("/become-author")} style={{ padding: "11px 24px", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>✦ Trở Thành Tác Giả</button>
           </div>
         )}
 
@@ -127,7 +132,7 @@ export default function Profile() {
 
         {/* CONTENT */}
         {loading ? (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "rgba(240,230,208,0.3)" }}>Đang tải...</div>
+          <div style={{ textAlign: "center", padding: "60px 0", color: "rgba(240,230,208,0.3)", fontFamily: "'Inter', sans-serif" }}>Đang tải...</div>
         ) : activeTab === "history" ? (
           <div className="fade-up">
             {history.length === 0 ? (

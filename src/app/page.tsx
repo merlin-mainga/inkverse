@@ -47,22 +47,50 @@ export default function Home() {
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Fetch stats
-  useEffect(() => {
-    fetch("/api/stats", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(data => {
-      if (data) setStats(data);
+useEffect(() => {
+  fetch("/api/stats", { cache: "no-store" })
+    .then(async (r) => {
+      if (!r.ok) {
+        const text = await r.text();
+        throw new Error(`stats ${r.status}: ${text}`);
+      }
+      return r.json();
+    })
+    .then((data) => {
+      setStats(data);
+    })
+    .catch((err) => {
+      console.error("Stats error:", err);
+      setStats({ mangaCount: 0, userCount: 0, totalViews: 0 });
     });
-  }, []);
+}, []);
 
   // Fetch mangas
-  useEffect(() => {
-    setMangasLoading(true);
-    const params = new URLSearchParams();
-    if (selectedGenre !== "Tất cả") params.set("genre", selectedGenre);
-    if (searchQuery) params.set("q", searchQuery);
-    fetch(`/api/manga?${params}`)
-      .then(r => r.json())
-      .then(data => { setMangas(data.mangas || []); setMangasLoading(false); });
-  }, [selectedGenre, searchQuery]);
+useEffect(() => {
+  setMangasLoading(true);
+
+  const params = new URLSearchParams();
+  if (selectedGenre !== "Tất cả") params.set("genre", selectedGenre);
+  if (searchQuery) params.set("q", searchQuery);
+
+  fetch(`/api/manga?${params.toString()}`)
+    .then(async (r) => {
+      if (!r.ok) {
+        const text = await r.text();
+        throw new Error(`manga ${r.status}: ${text}`);
+      }
+      return r.json();
+    })
+    .then((data) => {
+      setMangas(data.mangas || []);
+      setMangasLoading(false);
+    })
+    .catch((err) => {
+      console.error("Manga error:", err);
+      setMangas([]);
+      setMangasLoading(false);
+    });
+}, [selectedGenre, searchQuery]);
 
   async function handleAuth() {
     setAuthLoading(true); setAuthMsg("");

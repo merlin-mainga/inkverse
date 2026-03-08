@@ -4,33 +4,23 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 type ChapterMeta = {
-  id: string;
-  title: string;
-  chapterNum: number;
-  views: number;
-  createdAt: string;
+  id: string; title: string; chapterNum: number; views: number; createdAt: string;
 };
-
 type Comment = {
-  id: string;
-  content: string;
-  createdAt: string;
+  id: string; content: string; createdAt: string;
   user: { name: string; image?: string };
 };
-
 type Manga = {
-  id: string;
-  title: string;
-  description: string;
-  coverImage: string;
-  genre: string[];
-  status: string;
-  views: number;
-  avgRating: number;
-  ratingCount: number;
+  id: string; title: string; description: string; coverImage: string;
+  genre: string[]; status: string; views: number;
+  avgRating: number; ratingCount: number;
   author: { id: string; name: string; image?: string };
   _count: { chapters: number; comments: number };
 };
+type ReadHistory = {
+  chapterId: string;
+  chapter: { id: string; chapterNum: number; title: string };
+} | null;
 
 export default function MangaDetailClient() {
   const { id } = useParams();
@@ -40,17 +30,16 @@ export default function MangaDetailClient() {
   const [manga, setManga]         = useState<Manga | null>(null);
   const [chapters, setChapters]   = useState<ChapterMeta[]>([]);
   const [comments, setComments]   = useState<Comment[]>([]);
+  const [history, setHistory]     = useState<ReadHistory>(null);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
-
-  const [comment, setComment]         = useState("");
-  const [submitting, setSubmitting]   = useState(false);
-  const [userRating, setUserRating]   = useState(0);
+  const [comment, setComment]     = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [userRating, setUserRating] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
-  const [ratingDone, setRatingDone]   = useState(false);
-  const [following, setFollowing]     = useState(false);
+  const [ratingDone, setRatingDone] = useState(false);
+  const [following, setFollowing] = useState(false);
 
-  // ── Fetch tất cả ──
   useEffect(() => {
     setLoading(true);
     Promise.all([
@@ -58,18 +47,19 @@ export default function MangaDetailClient() {
       fetch(`/api/manga/${id}/chapters`).then(r => r.ok ? r.json() : []),
       fetch(`/api/manga/${id}/comments`).then(r => r.ok ? r.json() : []),
       fetch(`/api/manga/${id}/follow`).then(r => r.ok ? r.json() : { following: false }),
+      fetch(`/api/manga/${id}/read-history`).then(r => r.ok ? r.json() : { history: null }),
     ])
-      .then(([mg, chs, cms, flw]) => {
+      .then(([mg, chs, cms, flw, hist]) => {
         setManga(mg);
         setChapters(Array.isArray(chs) ? chs : []);
         setComments(Array.isArray(cms) ? cms : []);
         setFollowing(flw.following ?? false);
+        setHistory(hist.history ?? null);
         setLoading(false);
       })
       .catch(err => { setError(err.message); setLoading(false); });
   }, [id]);
 
-  // ── Toggle follow ──
   const toggleFollow = useCallback(async () => {
     if (!session) { router.push("/login"); return; }
     const res = await fetch(`/api/manga/${id}/follow`, { method: "POST" });
@@ -77,7 +67,6 @@ export default function MangaDetailClient() {
     setFollowing(data.following);
   }, [id, session, router]);
 
-  // ── Submit comment ──
   const handleComment = useCallback(async () => {
     if (!comment.trim() || !session) return;
     setSubmitting(true);
@@ -86,15 +75,10 @@ export default function MangaDetailClient() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: comment.trim() }),
     });
-    if (res.ok) {
-      const newComment = await res.json();
-      setComments(prev => [newComment, ...prev]);
-      setComment("");
-    }
+    if (res.ok) { setComments(prev => [await res.json(), ...prev]); setComment(""); }
     setSubmitting(false);
   }, [comment, id, session]);
 
-  // ── Submit rating ──
   const handleRating = useCallback(async (score: number) => {
     if (!session) { router.push("/login"); return; }
     if (ratingDone) return;
@@ -121,8 +105,9 @@ export default function MangaDetailClient() {
     </div>
   );
 
-  const firstChapter  = chapters[0];
-  const latestChapter = chapters[chapters.length - 1];
+  const firstChapter   = chapters[0];
+  const latestChapter  = chapters[chapters.length - 1];
+  const continueChapter = history?.chapter ?? null;
 
   return (
     <div style={S.root}>
@@ -143,37 +128,31 @@ export default function MangaDetailClient() {
         .fade-up { animation: fadeUp 0.45s ease both; }
       `}</style>
 
-      {/* NAV */}
       <nav style={S.nav}>
         <span className="back-btn" onClick={() => router.push("/")} style={S.navBack}>← Trang chủ</span>
         <div style={S.navDivider} />
-        <span style={S.navTitle} title={manga.title}>{manga.title}</span>
+        <span style={S.navTitle}>{manga.title}</span>
       </nav>
 
       <div style={S.container}>
 
-        {/* ── HERO ── */}
+        {/* HERO */}
         <div style={S.hero} className="fade-up">
-          {/* Cover */}
           <div style={{ flexShrink: 0 }}>
-            {manga.coverImage ? (
-              <img src={manga.coverImage} alt={manga.title} style={S.cover} />
-            ) : (
-              <div style={S.coverFallback}><span style={{ fontSize: 60 }}>📖</span></div>
-            )}
+            {manga.coverImage
+              ? <img src={manga.coverImage} alt={manga.title} style={S.cover} />
+              : <div style={S.coverFallback}><span style={{ fontSize: 60 }}>📖</span></div>
+            }
           </div>
 
-          {/* Info */}
           <div style={S.info}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
               {manga.genre?.map(g => <span key={g} style={S.genreTag}>{g}</span>)}
             </div>
-
             <h1 style={S.title}>{manga.title}</h1>
             <p style={S.authorLine}>Tác giả: <span style={{ color: "#c9411e" }}>@{manga.author?.name}</span></p>
             <p style={S.desc}>{manga.description || "Chưa có mô tả."}</p>
 
-            {/* Stats */}
             <div style={S.statsRow}>
               {[
                 ["📚", chapters.length, "Chapter"],
@@ -188,7 +167,6 @@ export default function MangaDetailClient() {
               ))}
             </div>
 
-            {/* Status */}
             <div style={{ marginBottom: 20 }}>
               <span style={{
                 padding: "4px 12px", borderRadius: 20, fontSize: 12,
@@ -201,38 +179,59 @@ export default function MangaDetailClient() {
               </span>
             </div>
 
-            {/* Actions */}
+            {/* ── ACTION BUTTONS ── */}
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button
-                className="glow-btn"
-                disabled={!firstChapter}
-                onClick={() => firstChapter && router.push(`/manga/${id}/chapter/${firstChapter.id}`)}
-                style={{ ...S.primaryBtn, cursor: firstChapter ? "pointer" : "default" }}
-              >
-                📖 Đọc từ đầu
-              </button>
+              {/* Đọc tiếp nếu có history, không thì Đọc từ đầu */}
+              {continueChapter ? (
+                <button className="glow-btn"
+                  onClick={() => router.push(`/manga/${id}/chapter/${continueChapter.id}`)}
+                  style={{ ...S.primaryBtn, cursor: "pointer" }}
+                >
+                  ▶ Đọc tiếp Chapter {continueChapter.chapterNum}
+                </button>
+              ) : (
+                <button className="glow-btn"
+                  disabled={!firstChapter}
+                  onClick={() => firstChapter && router.push(`/manga/${id}/chapter/${firstChapter.id}`)}
+                  style={{ ...S.primaryBtn, cursor: firstChapter ? "pointer" : "default" }}
+                >
+                  📖 Đọc từ đầu
+                </button>
+              )}
+
+              {/* Nếu đang đọc tiếp, thêm nút Đọc từ đầu nhỏ hơn */}
+              {continueChapter && firstChapter && (
+                <button className="glow-btn"
+                  onClick={() => router.push(`/manga/${id}/chapter/${firstChapter.id}`)}
+                  style={S.secondaryBtn}
+                >
+                  📖 Từ đầu
+                </button>
+              )}
+
               {chapters.length > 1 && (
-                <button className="glow-btn" onClick={() => router.push(`/manga/${id}/chapter/${latestChapter.id}`)} style={S.secondaryBtn}>
+                <button className="glow-btn"
+                  onClick={() => router.push(`/manga/${id}/chapter/${latestChapter.id}`)}
+                  style={S.secondaryBtn}
+                >
                   ⏩ Mới nhất
                 </button>
               )}
-              <button
-                onClick={toggleFollow}
-                style={{
-                  ...S.secondaryBtn,
-                  background: following ? "rgba(201,65,30,0.2)" : "rgba(255,255,255,0.05)",
-                  borderColor: following ? "rgba(201,65,30,0.4)" : "rgba(255,255,255,0.1)",
-                  color: following ? "#c9411e" : "rgba(232,224,212,0.6)",
-                  cursor: "pointer",
-                }}
-              >
+
+              <button onClick={toggleFollow} style={{
+                ...S.secondaryBtn,
+                background: following ? "rgba(201,65,30,0.2)" : "rgba(255,255,255,0.05)",
+                borderColor: following ? "rgba(201,65,30,0.4)" : "rgba(255,255,255,0.1)",
+                color: following ? "#c9411e" : "rgba(232,224,212,0.6)",
+                cursor: "pointer",
+              }}>
                 {following ? "🔖 Đang theo dõi" : "🔖 Theo dõi"}
               </button>
             </div>
           </div>
         </div>
 
-        {/* ── RATING ── */}
+        {/* RATING */}
         <div style={S.card} className="fade-up">
           <h3 style={S.cardTitle}>⭐ Đánh giá manga này</h3>
           {!session ? (
@@ -251,28 +250,34 @@ export default function MangaDetailClient() {
                   style={{ fontSize: 32, color: star <= (hoveredStar || userRating) ? "#f5a623" : "rgba(232,224,212,0.2)" }}
                 >★</span>
               ))}
-              {userRating > 0 && !ratingDone && (
-                <span style={S.dimText}>Bạn chọn {userRating}/5</span>
-              )}
             </div>
           )}
         </div>
 
-        {/* ── CHAPTERS ── */}
+        {/* CHAPTERS */}
         <div style={{ marginBottom: 40 }} className="fade-up">
           <h2 style={S.sectionTitle}>📚 Danh sách chapter ({chapters.length})</h2>
           {chapters.length === 0 ? (
-            <div style={S.empty}>Chưa có chapter nào được đăng tải</div>
+            <div style={S.empty}>Chưa có chapter nào</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {chapters.map(ch => (
                 <div key={ch.id} className="chapter-item"
                   onClick={() => router.push(`/manga/${id}/chapter/${ch.id}`)}
-                  style={S.chapterRow}
+                  style={{
+                    ...S.chapterRow,
+                    background: history?.chapterId === ch.id ? "rgba(201,65,30,0.08)" : "rgba(255,255,255,0.03)",
+                    borderColor: history?.chapterId === ch.id ? "rgba(201,65,30,0.3)" : "rgba(255,255,255,0.06)",
+                  }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <span style={S.chNum}>Chapter {ch.chapterNum}</span>
-                    <span style={S.chTitle}>{ch.title}</span>
+                    <div>
+                      <span style={S.chTitle}>{ch.title}</span>
+                      {history?.chapterId === ch.id && (
+                        <span style={{ marginLeft: 8, fontSize: 10, color: "#c9411e", fontFamily: "'Noto Sans',sans-serif" }}>● Đang đọc</span>
+                      )}
+                    </div>
                   </div>
                   <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
                     <span style={S.dimText}>👁 {ch.views ?? 0}</span>
@@ -284,26 +289,17 @@ export default function MangaDetailClient() {
           )}
         </div>
 
-        {/* ── COMMENTS ── */}
+        {/* COMMENTS */}
         <div className="fade-up">
           <h2 style={S.sectionTitle}>💬 Bình luận ({comments.length})</h2>
-
           <div style={{ marginBottom: 24 }}>
             {session ? (
               <>
-                <textarea
-                  rows={3}
-                  placeholder="Viết bình luận của bạn..."
-                  value={comment}
-                  onChange={e => setComment(e.target.value)}
-                  style={S.textarea}
-                />
-                <button
-                  className="glow-btn"
-                  onClick={handleComment}
+                <textarea rows={3} placeholder="Viết bình luận..." value={comment}
+                  onChange={e => setComment(e.target.value)} style={S.textarea} />
+                <button className="glow-btn" onClick={handleComment}
                   disabled={submitting || !comment.trim()}
-                  style={{ ...S.primaryBtn, marginTop: 10, opacity: (submitting || !comment.trim()) ? 0.5 : 1, cursor: (submitting || !comment.trim()) ? "default" : "pointer" }}
-                >
+                  style={{ ...S.primaryBtn, marginTop: 10, opacity: (submitting || !comment.trim()) ? 0.5 : 1, cursor: (submitting || !comment.trim()) ? "default" : "pointer" }}>
                   {submitting ? "Đang gửi..." : "Gửi bình luận"}
                 </button>
               </>
@@ -317,22 +313,20 @@ export default function MangaDetailClient() {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {comments.length === 0 ? (
               <div style={S.empty}>Chưa có bình luận nào. Hãy là người đầu tiên!</div>
-            ) : (
-              comments.map(c => (
-                <div key={c.id} style={S.commentCard}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                    <div style={S.avatar}>
-                      {c.user?.image
-                        ? <img src={c.user.image} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} alt={c.user.name} />
-                        : "👤"}
-                    </div>
-                    <span style={S.commentUser}>{c.user?.name}</span>
-                    <span style={S.dimText}>{new Date(c.createdAt).toLocaleDateString("vi-VN")}</span>
+            ) : comments.map(c => (
+              <div key={c.id} style={S.commentCard}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <div style={S.avatar}>
+                    {c.user?.image
+                      ? <img src={c.user.image} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} alt={c.user.name} />
+                      : "👤"}
                   </div>
-                  <p style={S.commentBody}>{c.content}</p>
+                  <span style={S.commentUser}>{c.user?.name}</span>
+                  <span style={S.dimText}>{new Date(c.createdAt).toLocaleDateString("vi-VN")}</span>
                 </div>
-              ))
-            )}
+                <p style={S.commentBody}>{c.content}</p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -369,7 +363,7 @@ const S: Record<string, React.CSSProperties> = {
   card:         { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: 24, marginBottom: 32 },
   cardTitle:    { fontFamily: "'Oswald',sans-serif", fontSize: 18, marginBottom: 16 },
   sectionTitle: { fontFamily: "'Oswald',sans-serif", fontSize: 22, fontWeight: 600, marginBottom: 20 },
-  chapterRow:   { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8 },
+  chapterRow:   { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", border: "1px solid", borderRadius: 8 },
   chNum:        { fontFamily: "'Oswald',sans-serif", fontSize: 14, color: "#c9411e", minWidth: 90 },
   chTitle:      { fontFamily: "'Noto Sans',sans-serif", fontSize: 14, color: "rgba(232,224,212,0.8)" },
   empty:        { textAlign: "center", padding: "40px", color: "rgba(232,224,212,0.3)", fontFamily: "'Noto Sans',sans-serif" },

@@ -44,6 +44,7 @@ export default function Home() {
   const [chapterNum, setChapterNum] = useState(1);
   const [chapterTitle, setChapterTitle] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Fetch stats
   useEffect(() => {
@@ -137,77 +138,301 @@ export default function Home() {
   return (
     <div style={{ minHeight: "100vh", background: "#080808", color: "#f0e6d0", fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(#c9a84c, #8b6914); border-radius: 2px; }
-        body { background: #080808; }
-        .manga-card { transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); cursor: pointer; position: relative; }
-        .manga-card:hover { transform: translateY(-10px); }
-        .manga-card::before { content:''; position:absolute; inset:-1px; background:linear-gradient(135deg,rgba(201,168,76,0.3),transparent,rgba(201,168,76,0.1)); border-radius:10px; opacity:0; transition:opacity 0.3s; z-index:1; pointer-events:none; }
-        .manga-card:hover::before { opacity:1; }
-        .gold-btn { background:linear-gradient(135deg,#c9a84c,#8b6914,#c9a84c); background-size:200% auto; transition:all 0.3s ease; cursor:pointer; border:none; animation:shimmer 3s linear infinite; }
-        .gold-btn:hover { background-position:right center; box-shadow:0 0 30px rgba(201,168,76,0.4); transform:translateY(-2px); }
-        .gold-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
-        @keyframes shimmer { 0%{background-position:0% center} 100%{background-position:200% center} }
-        .glass-card { background:rgba(255,255,255,0.02); backdrop-filter:blur(20px); border:1px solid rgba(201,168,76,0.15); }
-        .input-luxury { width:100%; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(201,168,76,0.2); border-radius:6px; color:#f0e6d0; font-family:'Inter',sans-serif; font-size:14px; outline:none; transition:all 0.3s; }
-        .input-luxury:focus { border-color:#c9a84c; background:rgba(201,168,76,0.05); box-shadow:0 0 20px rgba(201,168,76,0.1); }
-        .input-luxury::placeholder { color:rgba(240,230,208,0.25); }
-        .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:100; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); }
-        @keyframes fadeUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
-        .modal-box { animation:fadeUp 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
-        .genre-pill { transition:all 0.25s ease; cursor:pointer; border:none; }
-        .hero-line { height:1px; background:linear-gradient(90deg,transparent,#c9a84c,transparent); }
-        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-        .float-anim { animation:float 4s ease-in-out infinite; }
-        .nav-link { transition:color 0.2s; cursor:pointer; }
-        .nav-link:hover { color:#c9a84c; }
-        @keyframes gradientMove { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
-        .title-gradient { background:linear-gradient(135deg,#f0e6d0,#c9a84c,#f0e6d0,#8b6914,#c9a84c); background-size:300% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; animation:gradientMove 5s ease infinite; }
-        @keyframes loading-bar { 0%{width:0%} 50%{width:70%} 100%{width:100%} }
-        @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
-        .skeleton { background:rgba(201,168,76,0.06); border-radius:8px; animation:pulse 1.5s ease-in-out infinite; }
-        @media (max-width:768px) { .desktop-menu{display:none !important;} .mobile-menu-btn{display:flex !important;} .mobile-menu-dropdown{display:flex !important;} }
-      `}</style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(#c9a84c, #8b6914); border-radius: 2px; }
+  body { background: #080808; }
+  .manga-card { transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94); cursor: pointer; position: relative; }
+  .manga-card:hover { transform: translateY(-10px); }
+  .manga-card::before { content:''; position:absolute; inset:-1px; background:linear-gradient(135deg,rgba(201,168,76,0.3),transparent,rgba(201,168,76,0.1)); border-radius:10px; opacity:0; transition:opacity 0.3s; z-index:1; pointer-events:none; }
+  .manga-card:hover::before { opacity:1; }
+  .gold-btn { background:linear-gradient(135deg,#c9a84c,#8b6914,#c9a84c); background-size:200% auto; transition:all 0.3s ease; cursor:pointer; border:none; animation:shimmer 3s linear infinite; }
+  .gold-btn:hover { background-position:right center; box-shadow:0 0 30px rgba(201,168,76,0.4); transform:translateY(-2px); }
+  .gold-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
+  @keyframes shimmer { 0%{background-position:0% center} 100%{background-position:200% center} }
+  .glass-card { background:rgba(255,255,255,0.02); backdrop-filter:blur(20px); border:1px solid rgba(201,168,76,0.15); }
+  .input-luxury { width:100%; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(201,168,76,0.2); border-radius:6px; color:#f0e6d0; font-family:'Inter',sans-serif; font-size:14px; outline:none; transition:all 0.3s; }
+  .input-luxury:focus { border-color:#c9a84c; background:rgba(201,168,76,0.05); box-shadow:0 0 20px rgba(201,168,76,0.1); }
+  .input-luxury::placeholder { color:rgba(240,230,208,0.25); }
+  .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:100; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); }
+  @keyframes fadeUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-box { animation:fadeUp 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
+  .genre-pill { transition:all 0.25s ease; cursor:pointer; border:none; }
+  .hero-line { height:1px; background:linear-gradient(90deg,transparent,#c9a84c,transparent); }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .float-anim { animation:float 4s ease-in-out infinite; }
+  .nav-link { transition:color 0.2s; cursor:pointer; }
+  .nav-link:hover { color:#c9a84c; }
+  @keyframes gradientMove { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  .title-gradient { background:linear-gradient(135deg,#f0e6d0,#c9a84c,#f0e6d0,#8b6914,#c9a84c); background-size:300% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; animation:gradientMove 5s ease infinite; }
+  @keyframes loading-bar { 0%{width:0%} 50%{width:70%} 100%{width:100%} }
+  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+  .skeleton { background:rgba(201,168,76,0.06); border-radius:8px; animation:pulse 1.5s ease-in-out infinite; }
 
+  .hero-main-title {
+    position: relative;
+    display: inline-block;
+    transition: filter 0.35s ease, transform 0.35s ease;
+  }
+
+  .hero-main-title:hover {
+    filter: drop-shadow(0 0 10px rgba(201,168,76,0.18)) drop-shadow(0 0 22px rgba(201,168,76,0.12));
+  }
+
+  .hero-main-title::after {
+    content: "";
+    position: absolute;
+    top: -8%;
+    left: -18%;
+    width: 22%;
+    height: 116%;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,245,210,0.10) 35%,
+      rgba(255,230,150,0.34) 50%,
+      rgba(255,245,210,0.12) 65%,
+      rgba(255,255,255,0) 100%
+    );
+    filter: blur(8px);
+    opacity: 0;
+    transform: skewX(-18deg);
+  }
+
+  .hero-main-title:hover::after {
+    opacity: 1;
+    animation: heroShimmerSweep 1.15s ease forwards;
+  }
+
+  @keyframes heroShimmerSweep {
+    0% { left: -18%; }
+    100% { left: 108%; }
+  }
+
+  .hero-sub-title {
+    transition: color 0.28s ease, text-shadow 0.28s ease, opacity 0.28s ease;
+  }
+
+  .hero-sub-title:hover {
+    color: rgba(240,230,208,0.56) !important;
+    text-shadow: 0 0 10px rgba(201,168,76,0.18), 0 0 18px rgba(201,168,76,0.08);
+  }
+
+  @media (max-width:768px) {
+    .desktop-menu{display:none !important;}
+    .mobile-menu-btn{display:flex !important;}
+    .mobile-menu-dropdown{display:flex !important;}
+  }
+`}</style>
       {/* AMBIENT */}
       <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0 }}>
         <div style={{ position:"absolute", top:"10%", left:"20%", width:400, height:400, background:"radial-gradient(circle,rgba(201,168,76,0.04) 0%,transparent 70%)", borderRadius:"50%" }} />
         <div style={{ position:"absolute", bottom:"20%", right:"10%", width:300, height:300, background:"radial-gradient(circle,rgba(201,168,76,0.03) 0%,transparent 70%)", borderRadius:"50%" }} />
       </div>
 
-      {/* NAVBAR */}
-      <nav style={{ position:"sticky", top:0, zIndex:50, background:"rgba(8,8,8,0.92)", borderBottom:"1px solid rgba(201,168,76,0.12)", backdropFilter:"blur(20px)", padding:"0 24px", display:"flex", alignItems:"center", justifyContent:"space-between", height:64 }}>
-        <div onClick={() => router.push("/")} style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}>
-          <img src="/logo.png" alt="logo" style={{ width:36, height:36, borderRadius:8, objectFit:"contain" }} />
+            {/* NAVBAR */}
+      <nav
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          background: "rgba(8,8,8,0.92)",
+          borderBottom: "1px solid rgba(201,168,76,0.12)",
+          backdropFilter: "blur(20px)",
+          padding: "0 24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          height: 64
+        }}
+      >
+        <div onClick={() => router.push("/")} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+          <img src="/logo.png" alt="logo" style={{ width: 36, height: 36, borderRadius: 8, objectFit: "contain" }} />
           <div>
-            <div style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:17, letterSpacing:"0.1em" }}>M<span style={{ color:"#c9a84c" }}>AI</span>NGA</div>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:8, letterSpacing:"0.3em", color:"#c9a84c", textTransform:"uppercase" }}>AI Manga Platform</div>
+            <div style={{ fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 17, letterSpacing: "0.1em" }}>
+              M<span style={{ color: "#c9a84c" }}>AI</span>NGA
+            </div>
+            <div
+              style={{
+                fontFamily: "'Inter',sans-serif",
+                fontSize: 8,
+                letterSpacing: "0.3em",
+                color: "#c9a84c",
+                textTransform: "uppercase"
+              }}
+            >
+              AI Manga Platform
+            </div>
           </div>
         </div>
 
-        <div className="desktop-menu" style={{ display:"flex", alignItems:"center", gap:32 }}>
-          {["Khám Phá","Bảng Xếp Hạng","Tác Giả"].map(item => (
-            <span key={item} className="nav-link" style={{ fontFamily:"'Inter',sans-serif", fontSize:13, color:"rgba(240,230,208,0.5)", letterSpacing:"0.05em" }}>{item}</span>
+        <div className="desktop-menu" style={{ display: "flex", alignItems: "center", gap: 32 }}>
+          {["Khám Phá", "Bảng Xếp Hạng", "Tác Giả"].map((item) => (
+            <span
+              key={item}
+              className="nav-link"
+              style={{
+                fontFamily: "'Inter',sans-serif",
+                fontSize: 13,
+                color: "rgba(240,230,208,0.5)",
+                letterSpacing: "0.05em"
+              }}
+            >
+              {item}
+            </span>
           ))}
         </div>
 
-        <div className="desktop-menu" style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <button className="gold-btn" onClick={() => isLoggedIn ? setShowUpload(true) : setShowAuth(true)} style={{ padding:"9px 20px", borderRadius:6, color:"#080808", fontFamily:"'Inter',sans-serif", fontSize:13, fontWeight:600 }}>✦ Đăng Manga</button>
+        <div className="desktop-menu" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(201,168,76,0.18)",
+              borderRadius: 999,
+              overflow: "hidden",
+              transition: "all 0.25s ease",
+              width: searchOpen ? 260 : 42,
+              height: 42
+            }}
+          >
+            <button
+              onClick={() => setSearchOpen((v) => !v)}
+              style={{
+                width: 42,
+                height: 42,
+                background: "transparent",
+                border: "none",
+                color: "#c9a84c",
+                cursor: "pointer",
+                fontSize: 15,
+                flexShrink: 0
+              }}
+              aria-label="Mở tìm kiếm"
+            >
+              🔍
+            </button>
+
+            {searchOpen && (
+              <input
+                type="text"
+                placeholder="Tìm manga, tác giả..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  color: "#f0e6d0",
+                  fontFamily: "'Inter',sans-serif",
+                  fontSize: 13,
+                  padding: "0 14px 0 0"
+                }}
+              />
+            )}
+          </div>
+
+          <button
+            className="gold-btn"
+            onClick={() => (isLoggedIn ? setShowUpload(true) : setShowAuth(true))}
+            style={{
+              padding: "9px 20px",
+              borderRadius: 6,
+              color: "#080808",
+              fontFamily: "'Inter',sans-serif",
+              fontSize: 13,
+              fontWeight: 600
+            }}
+          >
+            ✦ Đăng Manga
+          </button>
+
           {isLoggedIn ? (
-            <div onClick={() => router.push("/profile")} style={{ width:36, height:36, borderRadius:"50%", background:"linear-gradient(135deg,#c9a84c,#8b6914)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:16, overflow:"hidden" }}>
-              {session?.user?.image ? <img src={session.user.image} style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : "👤"}
+            <div
+              onClick={() => router.push("/profile")}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg,#c9a84c,#8b6914)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                fontSize: 16,
+                overflow: "hidden"
+              }}
+            >
+              {session?.user?.image ? (
+                <img src={session.user.image} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                "👤"
+              )}
             </div>
           ) : (
-            <button onClick={() => setShowAuth(true)} style={{ background:"transparent", border:"1px solid rgba(201,168,76,0.3)", borderRadius:6, padding:"8px 18px", fontFamily:"'Inter',sans-serif", fontSize:13, color:"rgba(240,230,208,0.6)", cursor:"pointer" }}>Đăng nhập</button>
+            <button
+              onClick={() => setShowAuth(true)}
+              style={{
+                background: "transparent",
+                border: "1px solid rgba(201,168,76,0.3)",
+                borderRadius: 6,
+                padding: "8px 18px",
+                fontFamily: "'Inter',sans-serif",
+                fontSize: 13,
+                color: "rgba(240,230,208,0.6)",
+                cursor: "pointer"
+              }}
+            >
+              Đăng nhập
+            </button>
           )}
         </div>
 
-        <button className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ display:"none", flexDirection:"column", gap:5, background:"transparent", border:"none", cursor:"pointer", padding:8 }}>
-          <div style={{ width:24, height:2, background:menuOpen?"#c9a84c":"#f0e6d0", transition:"all 0.3s", transform:menuOpen?"rotate(45deg) translate(5px,5px)":"none" }} />
-          <div style={{ width:24, height:2, background:"#c9a84c", transition:"all 0.3s", opacity:menuOpen?0:1 }} />
-          <div style={{ width:24, height:2, background:menuOpen?"#c9a84c":"#f0e6d0", transition:"all 0.3s", transform:menuOpen?"rotate(-45deg) translate(5px,-5px)":"none" }} />
+        <button
+          className="mobile-menu-btn"
+          onClick={() => setMenuOpen(!menuOpen)}
+          style={{
+            display: "none",
+            flexDirection: "column",
+            gap: 5,
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            padding: 8
+          }}
+        >
+          <div
+            style={{
+              width: 24,
+              height: 2,
+              background: menuOpen ? "#c9a84c" : "#f0e6d0",
+              transition: "all 0.3s",
+              transform: menuOpen ? "rotate(45deg) translate(5px,5px)" : "none"
+            }}
+          />
+          <div
+            style={{
+              width: 24,
+              height: 2,
+              background: "#c9a84c",
+              transition: "all 0.3s",
+              opacity: menuOpen ? 0 : 1
+            }}
+          />
+          <div
+            style={{
+              width: 24,
+              height: 2,
+              background: menuOpen ? "#c9a84c" : "#f0e6d0",
+              transition: "all 0.3s",
+              transform: menuOpen ? "rotate(-45deg) translate(5px,-5px)" : "none"
+            }}
+          />
         </button>
       </nav>
 
@@ -227,50 +452,104 @@ export default function Home() {
           </div>
         </div>
       )}
+                  {/* HERO */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          padding: "36px 40px 10px",
+          textAlign: "center",
+          overflow: "hidden"
+        }}
+      >
+        <div className="hero-line" style={{ maxWidth: 180, margin: "0 auto 12px" }} />
 
-      {/* HERO */}
-      <div style={{ position:"relative", zIndex:1, padding:"100px 40px 80px", textAlign:"center", overflow:"hidden" }}>
-        <div className="hero-line" style={{ maxWidth:200, margin:"0 auto 24px" }} />
-        <div style={{ fontFamily:"'Inter',sans-serif", fontSize:11, letterSpacing:"0.4em", color:"#c9a84c", textTransform:"uppercase", marginBottom:24 }}>✦ Nền Tảng Đọc Và Sáng Tác Manga Hàng Đầu ✦</div>
-        <h1 style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:"clamp(48px,8vw,96px)", lineHeight:1.0, marginBottom:8, letterSpacing:"0.02em" }}>
-          <span className="title-gradient">THẾ GIỚI M</span><span style={{ color:"#c9a84c", textShadow:"0 0 30px rgba(201,168,76,0.8),0 0 60px rgba(201,168,76,0.4)", WebkitTextFillColor:"#c9a84c" }}>AI</span><span className="title-gradient">NGA</span>
-        </h1>
-        <h2 style={{ fontFamily:"'Cinzel',serif", fontWeight:400, fontSize:"clamp(32px,5vw,64px)", lineHeight:1.2, marginBottom:32, letterSpacing:"0.15em", color:"rgba(240,230,208,0.4)" }}>
-          M<span style={{ color:"#c9a84c", textShadow:"0 0 20px rgba(201,168,76,0.6)", fontWeight:700 }}>AI</span>NGA · KHÔNG CÓ GIỚI HẠN
-        </h2>
-        <div className="hero-line" style={{ maxWidth:300, margin:"0 auto 32px" }} />
-        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"clamp(16px,2vw,20px)", color:"rgba(240,230,208,0.45)", maxWidth:520, margin:"0 auto 48px", lineHeight:1.8, fontWeight:300 }}>
+        <div
+          style={{
+            fontFamily: "'Inter',sans-serif",
+            fontSize: 10,
+            letterSpacing: "0.32em",
+            color: "#c9a84c",
+            textTransform: "uppercase",
+            marginBottom: 10
+          }}
+        >
+          ✦ Nền Tảng Đọc Và Sáng Tác Manga Hàng Đầu ✦
+        </div>
+
+        <h1
+  className="hero-main-title"
+  style={{
+    fontFamily:"'Cinzel',serif",
+    fontWeight:700,
+    fontSize:"clamp(30px,5.2vw,64px)",
+    lineHeight:1.02,
+    marginBottom:2,
+    letterSpacing:"0.02em"
+  }}
+>
+  <span className="title-gradient">THẾ GIỚI M</span>
+  <span
+    style={{
+      color:"#c9a84c",
+      textShadow:"0 0 24px rgba(201,168,76,0.7),0 0 48px rgba(201,168,76,0.3)",
+      WebkitTextFillColor:"#c9a84c"
+    }}
+  >
+    AI
+  </span>
+  <span className="title-gradient">NGA</span>
+</h1>
+
+        <h2
+  className="hero-sub-title"
+  style={{
+    fontFamily:"'Cinzel',serif",
+    fontWeight:400,
+    fontSize:"clamp(18px,3vw,34px)",
+    lineHeight:1.1,
+    marginBottom:12,
+    letterSpacing:"0.12em",
+    color:"rgba(240,230,208,0.34)"
+  }}
+>
+  M
+  <span
+    style={{
+      color:"#c9a84c",
+      textShadow:"0 0 14px rgba(201,168,76,0.45)",
+      fontWeight:700
+    }}
+  >
+    AI
+  </span>
+  NGA · KHÔNG CÓ GIỚI HẠN
+</h2>
+
+        <div className="hero-line" style={{ maxWidth: 180, margin: "0 auto 12px" }} />
+
+        <p
+          style={{
+            fontFamily: "'Cormorant Garamond',serif",
+            fontSize: "clamp(13px,1.35vw,16px)",
+            color: "rgba(240,230,208,0.40)",
+            maxWidth: 500,
+            margin: "0 auto",
+            lineHeight: 1.45,
+            fontWeight: 300
+          }}
+        >
           Mainga là sự kết hợp giữa Manga & AI. Nơi mà chính bạn là "main" trong câu chuyện của mình.
         </p>
-
-        {/* SEARCH */}
-        <div style={{ display:"flex", alignItems:"center", maxWidth:560, margin:"0 auto 64px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(201,168,76,0.2)", borderRadius:40, overflow:"hidden", boxShadow:"0 8px 32px rgba(0,0,0,0.3)" }}>
-          <div style={{ padding:"0 20px", color:"#c9a84c", fontSize:16 }}>✦</div>
-          <input type="text" placeholder="Tìm kiếm manga, tác giả, thể loại..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ flex:1, padding:"16px 0", background:"transparent", border:"none", color:"#f0e6d0", fontFamily:"'Inter',sans-serif", fontSize:14, outline:"none" }} />
-        </div>
-
-        {/* STATS — số thật từ DB */}
-        <div style={{ display:"flex", justifyContent:"center", gap:64, flexWrap:"wrap" }}>
-          {STAT_DATA.map(([num, label, icon]) => (
-            <div key={label} style={{ textAlign:"center" }}>
-              <div style={{ fontFamily:"'Cinzel',serif", fontSize:"clamp(24px,3vw,36px)", color:"#c9a84c", fontWeight:600, minWidth:80 }}>
-                {stats === null ? (
-                  <div className="skeleton" style={{ width:80, height:36, borderRadius:6, display:"inline-block" }} />
-                ) : num}
-              </div>
-              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:11, color:"rgba(240,230,208,0.35)", letterSpacing:"0.2em", textTransform:"uppercase", marginTop:6 }}>{icon} {label}</div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* MANGA LIST */}
-      <div style={{ position:"relative", zIndex:1, maxWidth:1200, margin:"0 auto", padding:"0 40px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:40 }}>
-          <div style={{ flex:1, height:1, background:"linear-gradient(90deg,transparent,rgba(201,168,76,0.3))" }} />
-          <span style={{ fontFamily:"'Cinzel',serif", fontSize:11, letterSpacing:"0.3em", color:"#c9a84c", textTransform:"uppercase" }}>✦ Manga Mới Nhất ✦</span>
-          <div style={{ flex:1, height:1, background:"linear-gradient(90deg,rgba(201,168,76,0.3),transparent)" }} />
-        </div>
+<div id="manga-list" style={{ position:"relative", zIndex:1, maxWidth:1200, margin:"0 auto", padding:"0 40px" }}>
+  <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:40 }}>
+    <div style={{ flex:1, height:1, background:"linear-gradient(90deg,transparent,rgba(201,168,76,0.3))" }} />
+    <span style={{ fontFamily:"'Cinzel',serif", fontSize:11, letterSpacing:"0.3em", color:"#c9a84c", textTransform:"uppercase" }}>✦ Manga Mới Nhất ✦</span>
+    <div style={{ flex:1, height:1, background:"linear-gradient(90deg,rgba(201,168,76,0.3),transparent)" }} />
+  </div>
 
         {/* GENRE FILTER */}
         <div style={{ display:"flex", gap:8, marginBottom:40, flexWrap:"wrap", justifyContent:"center" }}>
@@ -440,6 +719,40 @@ export default function Home() {
           </div>
         </div>
       )}
+      {/* STATS */}
+      <div style={{ position:"relative", zIndex:1, maxWidth:1200, margin:"0 auto", padding:"8px 40px 48px" }}>
+        <div style={{ display:"flex", justifyContent:"center", gap:36, flexWrap:"wrap" }}>
+          {STAT_DATA.map(([num, label, icon]) => (
+            <div key={label} style={{ textAlign:"center" }}>
+              <div
+                style={{
+                  fontFamily:"'Cinzel',serif",
+                  fontSize:"clamp(20px,2.2vw,28px)",
+                  color:"#c9a84c",
+                  fontWeight:600,
+                  minWidth:72
+                }}
+              >
+                {stats === null ? (
+                  <div className="skeleton" style={{ width:72, height:28, borderRadius:6, display:"inline-block" }} />
+                ) : num}
+              </div>
+              <div
+                style={{
+                  fontFamily:"'Inter',sans-serif",
+                  fontSize:10,
+                  color:"rgba(240,230,208,0.28)",
+                  letterSpacing:"0.16em",
+                  textTransform:"uppercase",
+                  marginTop:6
+                }}
+              >
+                {icon} {label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* FOOTER */}
       <footer style={{ position:"relative", zIndex:1, borderTop:"1px solid rgba(201,168,76,0.1)", padding:"32px 40px", textAlign:"center" }}>

@@ -8,30 +8,24 @@ export async function GET(_: NextRequest) {
   if (!session?.user || (session.user as any).role !== "admin")
     return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
 
-  const users = await prisma.user.findMany({
+  const comments = await prisma.comment.findMany({
     orderBy: { createdAt: "desc" },
-    select: {
-      id: true, name: true, email: true,
-      role: true, image: true, createdAt: true,
-      _count: {
-        select: { mangas: true, comments: true, follows: true },
-      },
+    take: 100,
+    include: {
+      user: { select: { name: true, email: true } },
+      manga: { select: { title: true } },
     },
   });
 
-  return NextResponse.json({ users, total: users.length });
+  return NextResponse.json({ comments, total: comments.length });
 }
 
-// PATCH: đổi role user
-export async function PATCH(req: NextRequest) {
+export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user || (session.user as any).role !== "admin")
     return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
 
-  const { userId, role } = await req.json();
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: { role },
-  });
-  return NextResponse.json(user);
+  const { commentId } = await req.json();
+  await prisma.comment.delete({ where: { id: commentId } });
+  return NextResponse.json({ success: true });
 }

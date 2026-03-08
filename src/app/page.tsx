@@ -710,7 +710,14 @@ const latestMangas = [...mangas]
 
 
   return (
-    <div style={{ minHeight: "100vh", background: "#080808", color: "#f0e6d0", fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+    <div
+  style={{
+    minHeight: "100vh",
+    background: "linear-gradient(180deg, #0c0d10 0%, #090a0d 32%, #07080a 68%, #050608 100%)",
+    color: "#f0e6d0",
+    fontFamily: "'Cormorant Garamond', Georgia, serif"
+  }}
+>
       <style>{`
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -805,12 +812,85 @@ const latestMangas = [...mangas]
   transform: translateY(-50%) scale(1.04);
 }
 `}</style>
-      {/* AMBIENT */}
-      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0 }}>
-        <div style={{ position:"absolute", top:"10%", left:"20%", width:400, height:400, background:"radial-gradient(circle,rgba(201,168,76,0.04) 0%,transparent 70%)", borderRadius:"50%" }} />
-        <div style={{ position:"absolute", bottom:"20%", right:"10%", width:300, height:300, background:"radial-gradient(circle,rgba(201,168,76,0.03) 0%,transparent 70%)", borderRadius:"50%" }} />
-      </div>
+                              {/* AMBIENT */}
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, overflow:"hidden" }}>
+        <div
+          style={{
+            position:"absolute",
+            inset:"-8% -10%",
+            display:"grid",
+            gridTemplateColumns:"repeat(6, 240px)",
+            gridAutoRows:"360px",
+            gap:"18px",
+            justifyContent:"center",
+            alignContent:"start",
+            transform:"perspective(1400px) rotateX(16deg) rotateY(-8deg) scale(1.08)",
+            transformOrigin:"center top",
+            opacity:0.36,
+            filter:"blur(0.25px) saturate(0.95) brightness(0.82)",
+          }}
+        >
+          {[
+            "/manga-bg/c1.jpg",
+            "/manga-bg/c2.jpg",
+            "/manga-bg/c3.jpg",
+            "/manga-bg/c4.jpg",
+            "/manga-bg/c5.jpg",
+            "/manga-bg/c6.jpg",
+            "/manga-bg/c2.jpg",
+            "/manga-bg/c5.jpg",
+            "/manga-bg/c1.jpg",
+            "/manga-bg/c6.jpg",
+            "/manga-bg/c3.jpg",
+            "/manga-bg/c4.jpg",
+          ].map((src, i) => (
+            <div
+              key={i}
+              style={{
+                borderRadius:18,
+                overflow:"hidden",
+                background:"#0b0c10",
+                boxShadow:"0 10px 40px rgba(0,0,0,0.35)",
+              }}
+            >
+              <img
+                src={src}
+                alt=""
+                style={{
+                  width:"100%",
+                  height:"100%",
+                  objectFit:"cover",
+                  display:"block",
+                }}
+              />
+            </div>
+          ))}
+        </div>
 
+        <div
+          style={{
+            position:"absolute",
+            inset:0,
+            background:"linear-gradient(180deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.46) 24%, rgba(0,0,0,0.52) 52%, rgba(0,0,0,0.78) 100%)"
+          }}
+        />
+
+        <div
+          style={{
+            position:"absolute",
+            inset:0,
+            background:"radial-gradient(circle at 50% 18%, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 18%, transparent 42%)"
+          }}
+        />
+
+        <div
+          style={{
+            position:"absolute",
+            inset:0,
+            boxShadow:"inset 0 0 180px rgba(0,0,0,0.68)"
+          }}
+        />
+      </div>
             {/* NAVBAR */}
       <nav
         style={{

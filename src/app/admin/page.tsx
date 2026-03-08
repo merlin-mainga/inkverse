@@ -1,170 +1,265 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+
+type Stats = {
+  mangaCount: number; userCount: number; commentCount: number;
+  chapterCount: number; ratingCount: number; totalViews: number;
+};
+type Tab = "dashboard" | "manga" | "users" | "comments";
 
 export default function AdminPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "manga" | "users" | "comments">("dashboard");
-  const [stats, setStats] = useState({ mangas: 0, users: 0, comments: 0, views: 0 });
-  const [mangas, setMangas] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [adminPassword, setAdminPassword] = useState("");
-  const [isAuthed, setIsAuthed] = useState(false);
-  const ADMIN_PASSWORD = "mainga-admin-2025";
+  const { data: session, status } = useSession();
+  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const [stats, setStats]       = useState<Stats | null>(null);
+  const [mangas, setMangas]     = useState<any[]>([]);
+  const [users, setUsers]       = useState<any[]>([]);
+  const [comments, setComments] = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
 
-  useEffect(() => {
-    if (isAuthed) fetchData();
-  }, [isAuthed, activeTab]);
+  const isAdmin = status === "authenticated" && (session?.user as any)?.role === "admin";
 
-  async function fetchData() {
+  // ── Fetch theo tab ──
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      if (activeTab === "dashboard" || activeTab === "manga") {
+      if (activeTab === "dashboard") {
+        const [sRes, mRes] = await Promise.all([
+          fetch("/api/admin/stats"),
+          fetch("/api/manga?limit=100"),
+        ]);
+        if (sRes.ok) setStats(await sRes.json());
+        if (mRes.ok) { const d = await mRes.json(); setMangas(d.mangas || []); }
+      }
+      if (activeTab === "manga") {
         const res = await fetch("/api/manga?limit=100");
-        const data = await res.json();
-        setMangas(data.mangas || []);
-        setStats(s => ({ ...s, mangas: data.total || 0 }));
+        if (res.ok) { const d = await res.json(); setMangas(d.mangas || []); }
       }
-      if (activeTab === "users" || activeTab === "dashboard") {
+      if (activeTab === "users") {
         const res = await fetch("/api/admin/users");
-        const data = await res.json();
-        setUsers(data.users || []);
-        setStats(s => ({ ...s, users: data.total || 0 }));
+        if (res.ok) { const d = await res.json(); setUsers(d.users || []); }
       }
-    } catch (e) {}
+      if (activeTab === "comments") {
+        const res = await fetch("/api/admin/comments");
+        if (res.ok) { const d = await res.json(); setComments(d.comments || []); }
+      }
+    } catch {}
     setLoading(false);
-  }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (isAdmin) fetchData();
+  }, [isAdmin, fetchData]);
 
   async function deleteManga(id: string) {
-    if (!confirm("Xóa manga này?")) return;
-    await fetch(`/api/manga/${id}`, { method: "DELETE" });
-    setMangas(m => m.filter(x => x.id !== id));
+    if (!confirm("Xóa manga này? Hành động không thể hoàn tác!")) return;
+    const res = await fetch(`/api/manga/${id}`, { method: "DELETE" });
+    if (res.ok) setMangas(m => m.filter(x => x.id !== id));
+    else alert("Lỗi xóa manga!");
   }
 
-  if (!isAuthed) return (
-    <div style={{ minHeight: "100vh", background: "#080808", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500&display=swap');`}</style>
-      <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "16px", padding: "48px", width: "100%", maxWidth: 400, textAlign: "center" }}>
-        <div style={{ fontFamily: "'Cinzel', serif", fontSize: 28, color: "#c9a84c", marginBottom: 8, letterSpacing: "0.1em" }}>👑 ADMIN</div>
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.3)", marginBottom: 32, letterSpacing: "0.1em" }}>MAINGA CONTROL PANEL</div>
-        <input type="password" placeholder="Nhập mật khẩu admin..." value={adminPassword} onChange={e => setAdminPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && adminPassword === ADMIN_PASSWORD && setIsAuthed(true)} style={{ width: "100%", padding: "12px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "8px", color: "#f0e6d0", fontFamily: "'Inter', sans-serif", fontSize: 14, outline: "none", marginBottom: 16 }} />
-        <button onClick={() => adminPassword === ADMIN_PASSWORD ? setIsAuthed(true) : alert("Sai mật khẩu!")} style={{ width: "100%", padding: "13px", background: "linear-gradient(135deg, #c9a84c, #8b6914)", border: "none", borderRadius: "8px", color: "#080808", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer", letterSpacing: "0.1em" }}>ĐĂNG NHẬP</button>
+  async function deleteComment(id: string) {
+    if (!confirm("Xóa bình luận này?")) return;
+    const res = await fetch("/api/admin/comments", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ commentId: id }),
+    });
+    if (res.ok) setComments(c => c.filter(x => x.id !== id));
+  }
+
+  async function changeRole(userId: string, role: string) {
+    const res = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, role }),
+    });
+    if (res.ok) setUsers(u => u.map(x => x.id === userId ? { ...x, role } : x));
+  }
+
+  // ── Loading session ──
+  if (status === "loading") return (
+    <div style={S.center}>
+      <div style={S.spinner} />
+    </div>
+  );
+
+  // ── Không phải admin ──
+  if (!isAdmin) return (
+    <div style={S.center}>
+      <style>{FONTS}</style>
+      <div style={S.authCard}>
+        <div style={S.authIcon}>👑</div>
+        <h2 style={S.authTitle}>ADMIN PANEL</h2>
+        <p style={S.authSub}>MAINGA CONTROL CENTER</p>
+        <div style={{ height: 1, background: "linear-gradient(90deg,transparent,#c9a84c,transparent)", margin: "20px 0" }} />
+        {status === "unauthenticated" ? (
+          <button onClick={() => router.push("/login")} style={S.goldBtn}>Đăng nhập</button>
+        ) : (
+          <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: "#ff5050" }}>
+            ⚠ Tài khoản của bạn không có quyền admin
+          </p>
+        )}
+        <button onClick={() => router.push("/")} style={{ ...S.ghostBtn, marginTop: 12 }}>← Trang chủ</button>
       </div>
     </div>
   );
 
+  const TABS: [Tab, string, string][] = [
+    ["dashboard", "📊", "Dashboard"],
+    ["manga",     "📚", "Manga"],
+    ["users",     "👥", "Người Dùng"],
+    ["comments",  "💬", "Bình Luận"],
+  ];
+
   return (
-    <div style={{ minHeight: "100vh", background: "#080808", color: "#f0e6d0", display: "flex" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+    <div style={S.root}>
+      <style>{FONTS + `
         .tab-item { transition: all 0.2s; cursor: pointer; }
         .tab-item:hover { background: rgba(201,168,76,0.08) !important; color: #c9a84c !important; }
-        .action-btn { transition: all 0.2s; cursor: pointer; border: none; }
-        .action-btn:hover { opacity: 0.8; transform: translateY(-1px); }
-        .table-row { transition: background 0.2s; }
-        .table-row:hover { background: rgba(201,168,76,0.04) !important; }
+        .trow { transition: background 0.15s; }
+        .trow:hover { background: rgba(201,168,76,0.03) !important; }
+        .abtn { transition: all 0.15s; cursor: pointer; border: none; }
+        .abtn:hover { opacity: 0.75; transform: translateY(-1px); }
+        select { outline: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+        .sk { background: rgba(201,168,76,0.06); border-radius: 6px; animation: pulse 1.5s ease-in-out infinite; }
       `}</style>
 
       {/* SIDEBAR */}
-      <div style={{ width: 240, background: "rgba(255,255,255,0.02)", borderRight: "1px solid rgba(201,168,76,0.1)", padding: "32px 0", flexShrink: 0, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "0 24px 32px", borderBottom: "1px solid rgba(201,168,76,0.1)" }}>
-          <div style={{ fontFamily: "'Cinzel', serif", fontSize: 20, color: "#c9a84c", letterSpacing: "0.1em" }}>👑 ADMIN</div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: "rgba(240,230,208,0.3)", marginTop: 4, letterSpacing: "0.2em" }}>MAINGA PANEL</div>
+      <aside style={S.sidebar}>
+        <div style={S.sidebarHead}>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: 20, color: "#c9a84c", letterSpacing: "0.1em" }}>👑 ADMIN</div>
+          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 9, color: "rgba(240,230,208,0.3)", marginTop: 3, letterSpacing: "0.25em" }}>MAINGA CONTROL CENTER</div>
         </div>
 
-        <div style={{ padding: "24px 0", flex: 1 }}>
-          {[
-            ["dashboard", "📊", "Dashboard"],
-            ["manga", "📚", "Quản lý Manga"],
-            ["users", "👥", "Người dùng"],
-            ["comments", "💬", "Bình luận"],
-          ].map(([tab, icon, label]) => (
-            <div key={tab} className="tab-item" onClick={() => setActiveTab(tab as any)} style={{ padding: "12px 24px", display: "flex", alignItems: "center", gap: "12px", background: activeTab === tab ? "rgba(201,168,76,0.1)" : "transparent", borderLeft: activeTab === tab ? "2px solid #c9a84c" : "2px solid transparent", color: activeTab === tab ? "#c9a84c" : "rgba(240,230,208,0.4)", fontFamily: "'Inter', sans-serif", fontSize: 13 }}>
+        <nav style={{ flex: 1, padding: "16px 0" }}>
+          {TABS.map(([tab, icon, label]) => (
+            <div key={tab} className="tab-item" onClick={() => setActiveTab(tab)}
+              style={{
+                padding: "12px 24px", display: "flex", alignItems: "center", gap: 12,
+                background: activeTab === tab ? "rgba(201,168,76,0.1)" : "transparent",
+                borderLeft: activeTab === tab ? "2px solid #c9a84c" : "2px solid transparent",
+                color: activeTab === tab ? "#c9a84c" : "rgba(240,230,208,0.4)",
+                fontFamily: "'Inter',sans-serif", fontSize: 13,
+              }}
+            >
               <span>{icon}</span><span>{label}</span>
             </div>
           ))}
-        </div>
+        </nav>
 
-        <div style={{ padding: "24px" }}>
-          <button onClick={() => router.push("/")} style={{ width: "100%", padding: "10px", background: "transparent", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "6px", color: "rgba(240,230,208,0.4)", fontFamily: "'Inter', sans-serif", fontSize: 12, cursor: "pointer", letterSpacing: "0.08em" }}>← VỀ TRANG CHỦ</button>
+        <div style={{ padding: 20 }}>
+          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: "rgba(240,230,208,0.25)", marginBottom: 8, textAlign: "center" }}>
+            Đăng nhập: {(session?.user as any)?.email}
+          </div>
+          <button onClick={() => router.push("/")} style={{ ...S.ghostBtn, width: "100%" }}>← Trang chủ</button>
         </div>
-      </div>
+      </aside>
 
       {/* MAIN */}
-      <div style={{ flex: 1, overflow: "auto" }}>
+      <main style={S.main}>
         {/* TOP BAR */}
-        <div style={{ padding: "24px 32px", borderBottom: "1px solid rgba(201,168,76,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontFamily: "'Cinzel', serif", fontSize: 20, letterSpacing: "0.08em" }}>
-            {activeTab === "dashboard" ? "📊 Dashboard" : activeTab === "manga" ? "📚 Quản lý Manga" : activeTab === "users" ? "👥 Người dùng" : "💬 Bình luận"}
-          </div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "rgba(240,230,208,0.3)" }}>{new Date().toLocaleDateString("vi-VN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</div>
+        <div style={S.topBar}>
+          <h1 style={{ fontFamily: "'Cinzel',serif", fontSize: 18, letterSpacing: "0.06em" }}>
+            {TABS.find(t => t[0] === activeTab)?.[1]} {TABS.find(t => t[0] === activeTab)?.[2]}
+          </h1>
+          <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: "rgba(240,230,208,0.3)" }}>
+            {new Date().toLocaleDateString("vi-VN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+          </span>
         </div>
 
-        <div style={{ padding: "32px" }}>
-          {/* DASHBOARD */}
+        <div style={{ padding: 32 }}>
+
+          {/* ── DASHBOARD ── */}
           {activeTab === "dashboard" && (
             <div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "20px", marginBottom: 40 }}>
+              {/* Stats grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 20, marginBottom: 32 }}>
                 {[
-                  ["📚", mangas.length, "Tổng Manga", "#c9a84c"],
-                  ["👥", users.length, "Người Dùng", "#8b6914"],
-                  ["👁", mangas.reduce((a, m) => a + (m.views || 0), 0).toLocaleString(), "Lượt Xem", "#c9a84c"],
-                  ["⭐", mangas.filter(m => m.avgRating > 4).length, "Manga Hot", "#8b6914"],
+                  ["📚", stats?.mangaCount,    "Tổng Manga",    "#c9a84c"],
+                  ["👥", stats?.userCount,     "Người Dùng",    "#c9a84c"],
+                  ["💬", stats?.commentCount,  "Bình Luận",     "#8b9dc3"],
+                  ["📖", stats?.chapterCount,  "Chapters",      "#8b9dc3"],
+                  ["⭐", stats?.ratingCount,   "Đánh Giá",      "#c9a84c"],
+                  ["👁", stats?.totalViews,    "Lượt Xem",      "#c9a84c"],
                 ].map(([icon, val, label, color]) => (
-                  <div key={label as string} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,168,76,0.12)", borderRadius: "12px", padding: "24px" }}>
-                    <div style={{ fontSize: 28, marginBottom: 12 }}>{icon}</div>
-                    <div style={{ fontFamily: "'Cinzel', serif", fontSize: 28, color: color as string, fontWeight: 600, marginBottom: 4 }}>{val}</div>
-                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)", letterSpacing: "0.15em", textTransform: "uppercase" }}>{label as string}</div>
+                  <div key={label as string} style={S.statCard}>
+                    <div style={{ fontSize: 24, marginBottom: 10 }}>{icon}</div>
+                    {stats === null ? (
+                      <div className="sk" style={{ height: 32, width: 80, marginBottom: 6 }} />
+                    ) : (
+                      <div style={{ fontFamily: "'Cinzel',serif", fontSize: 26, color: color as string, fontWeight: 600, marginBottom: 4 }}>
+                        {typeof val === "number" ? val.toLocaleString() : "0"}
+                      </div>
+                    )}
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10, color: "rgba(240,230,208,0.3)", letterSpacing: "0.15em", textTransform: "uppercase" }}>{label as string}</div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,168,76,0.1)", borderRadius: "12px", padding: "24px" }}>
-                <div style={{ fontFamily: "'Cinzel', serif", fontSize: 16, marginBottom: 20, color: "#c9a84c" }}>🔥 Manga Nhiều View Nhất</div>
-                {mangas.sort((a, b) => b.views - a.views).slice(0, 5).map((m, i) => (
-                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                    <div style={{ fontFamily: "'Cinzel', serif", fontSize: 18, color: i < 3 ? "#c9a84c" : "rgba(240,230,208,0.3)", minWidth: 32 }}>#{i + 1}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: "#f0e6d0", marginBottom: 2 }}>{m.title}</div>
-                      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)" }}>@{m.author?.name}</div>
+              {/* Top manga */}
+              <div style={S.card}>
+                <div style={S.cardTitle}>🔥 Top Manga Nhiều View</div>
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} style={{ display: "flex", gap: 16, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <div className="sk" style={{ width: 32, height: 20 }} />
+                      <div className="sk" style={{ flex: 1, height: 20 }} />
+                      <div className="sk" style={{ width: 60, height: 20 }} />
                     </div>
-                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "#c9a84c" }}>👁 {m.views}</div>
+                  ))
+                ) : mangas.sort((a, b) => b.views - a.views).slice(0, 5).map((m, i) => (
+                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div style={{ fontFamily: "'Cinzel',serif", fontSize: 16, color: i < 3 ? "#c9a84c" : "rgba(240,230,208,0.25)", minWidth: 28 }}>#{i + 1}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: "#f0e6d0" }}>{m.title}</div>
+                      <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)" }}>@{m.author?.name} · ⭐ {m.avgRating?.toFixed(1) || "0.0"}</div>
+                    </div>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: "#c9a84c" }}>👁 {m.views}</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* MANGA MANAGEMENT */}
+          {/* ── MANGA ── */}
           {activeTab === "manga" && (
-            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,168,76,0.1)", borderRadius: "12px", overflow: "hidden" }}>
-              <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(201,168,76,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: "rgba(240,230,208,0.5)" }}>Tổng: {mangas.length} manga</span>
+            <div style={S.tableWrap}>
+              <div style={S.tableHead}>
+                <span style={S.tableHeadText}>Tổng: {mangas.length} manga</span>
               </div>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(201,168,76,0.08)" }}>
-                    {["Tên Manga", "Tác Giả", "Views", "Rating", "Thao Tác"].map(h => (
-                      <th key={h} style={{ padding: "14px 20px", textAlign: "left", fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)", letterSpacing: "0.15em", textTransform: "uppercase" }}>{h}</th>
+                    {["Tên Manga", "Tác Giả", "Thể Loại", "Views", "Rating", "Chapters", "Thao Tác"].map(h => (
+                      <th key={h} style={S.th}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {mangas.map(m => (
-                    <tr key={m.id} className="table-row" style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                      <td style={{ padding: "14px 20px" }}>
-                        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: "#f0e6d0", marginBottom: 2 }}>{m.title}</div>
-                        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)" }}>{m.genre?.join(", ")}</div>
+                  {loading ? (
+                    Array.from({ length: 6 }).map((_, i) => (
+                      <tr key={i}><td colSpan={7} style={{ padding: "12px 20px" }}><div className="sk" style={{ height: 20 }} /></td></tr>
+                    ))
+                  ) : mangas.map(m => (
+                    <tr key={m.id} className="trow" style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                      <td style={S.td}>
+                        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: "#f0e6d0" }}>{m.title}</div>
+                        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10, color: "rgba(240,230,208,0.25)", marginTop: 2 }}>{m.status}</div>
                       </td>
-                      <td style={{ padding: "14px 20px", fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.5)" }}>@{m.author?.name}</td>
-                      <td style={{ padding: "14px 20px", fontFamily: "'Inter', sans-serif", fontSize: 13, color: "#c9a84c" }}>{m.views}</td>
-                      <td style={{ padding: "14px 20px", fontFamily: "'Inter', sans-serif", fontSize: 13, color: "#c9a84c" }}>⭐ {m.avgRating?.toFixed(1) || "0.0"}</td>
-                      <td style={{ padding: "14px 20px" }}>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <button className="action-btn" onClick={() => router.push(`/manga/${m.id}`)} style={{ padding: "6px 12px", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: "6px", color: "#c9a84c", fontFamily: "'Inter', sans-serif", fontSize: 12 }}>Xem</button>
-                          <button className="action-btn" onClick={() => deleteManga(m.id)} style={{ padding: "6px 12px", background: "rgba(255,80,80,0.1)", border: "1px solid rgba(255,80,80,0.2)", borderRadius: "6px", color: "#ff5050", fontFamily: "'Inter', sans-serif", fontSize: 12 }}>Xóa</button>
+                      <td style={{ ...S.td, color: "rgba(240,230,208,0.5)" }}>@{m.author?.name}</td>
+                      <td style={{ ...S.td, color: "rgba(240,230,208,0.4)", fontSize: 11 }}>{m.genre?.slice(0,2).join(", ") || "—"}</td>
+                      <td style={{ ...S.td, color: "#c9a84c" }}>{m.views ?? 0}</td>
+                      <td style={{ ...S.td, color: "#c9a84c" }}>⭐ {m.avgRating?.toFixed(1) || "0.0"}</td>
+                      <td style={{ ...S.td, color: "rgba(240,230,208,0.5)" }}>{m._count?.chapters ?? 0}</td>
+                      <td style={S.td}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button className="abtn" onClick={() => router.push(`/manga/${m.id}`)} style={S.viewBtn}>Xem</button>
+                          <button className="abtn" onClick={() => deleteManga(m.id)} style={S.delBtn}>Xóa</button>
                         </div>
                       </td>
                     </tr>
@@ -174,26 +269,59 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* USERS */}
+          {/* ── USERS ── */}
           {activeTab === "users" && (
-            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,168,76,0.1)", borderRadius: "12px", overflow: "hidden" }}>
+            <div style={S.tableWrap}>
+              <div style={S.tableHead}>
+                <span style={S.tableHeadText}>Tổng: {users.length} người dùng</span>
+              </div>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(201,168,76,0.08)" }}>
-                    {["Tên", "Email", "Vai Trò", "Ngày Tham Gia"].map(h => (
-                      <th key={h} style={{ padding: "14px 20px", textAlign: "left", fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)", letterSpacing: "0.15em", textTransform: "uppercase" }}>{h}</th>
+                    {["Người Dùng", "Email", "Manga", "Comments", "Follows", "Vai Trò", "Ngày Tham Gia"].map(h => (
+                      <th key={h} style={S.th}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u: any) => (
-                    <tr key={u.id} className="table-row" style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                      <td style={{ padding: "14px 20px", fontFamily: "'Inter', sans-serif", fontSize: 14, color: "#f0e6d0" }}>{u.name}</td>
-                      <td style={{ padding: "14px 20px", fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.5)" }}>{u.email}</td>
-                      <td style={{ padding: "14px 20px" }}>
-                        <span style={{ padding: "3px 10px", background: u.role === "admin" ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.05)", border: `1px solid ${u.role === "admin" ? "rgba(201,168,76,0.3)" : "rgba(255,255,255,0.1)"}`, borderRadius: "20px", fontFamily: "'Inter', sans-serif", fontSize: 11, color: u.role === "admin" ? "#c9a84c" : "rgba(240,230,208,0.4)" }}>{u.role || "user"}</span>
+                  {loading ? (
+                    Array.from({ length: 6 }).map((_, i) => (
+                      <tr key={i}><td colSpan={7} style={{ padding: "12px 20px" }}><div className="sk" style={{ height: 20 }} /></td></tr>
+                    ))
+                  ) : users.map((u: any) => (
+                    <tr key={u.id} className="trow" style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                      <td style={S.td}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#c9a84c,#8b6914)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, overflow: "hidden", flexShrink: 0 }}>
+                            {u.image ? <img src={u.image} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "👤"}
+                          </div>
+                          <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: "#f0e6d0" }}>{u.name || "—"}</span>
+                        </div>
                       </td>
-                      <td style={{ padding: "14px 20px", fontFamily: "'Inter', sans-serif", fontSize: 12, color: "rgba(240,230,208,0.3)" }}>{new Date(u.createdAt).toLocaleDateString("vi-VN")}</td>
+                      <td style={{ ...S.td, color: "rgba(240,230,208,0.4)", fontSize: 12 }}>{u.email}</td>
+                      <td style={{ ...S.td, color: "#c9a84c", textAlign: "center" }}>{u._count?.mangas ?? 0}</td>
+                      <td style={{ ...S.td, color: "rgba(240,230,208,0.5)", textAlign: "center" }}>{u._count?.comments ?? 0}</td>
+                      <td style={{ ...S.td, color: "rgba(240,230,208,0.5)", textAlign: "center" }}>{u._count?.follows ?? 0}</td>
+                      <td style={S.td}>
+                        <select
+                          value={u.role || "user"}
+                          onChange={e => changeRole(u.id, e.target.value)}
+                          style={{
+                            padding: "4px 8px", borderRadius: 6, fontSize: 11,
+                            fontFamily: "'Inter',sans-serif", cursor: "pointer",
+                            background: u.role === "admin" ? "rgba(201,168,76,0.15)" : u.role === "author" ? "rgba(100,180,100,0.15)" : "rgba(255,255,255,0.05)",
+                            border: `1px solid ${u.role === "admin" ? "rgba(201,168,76,0.3)" : u.role === "author" ? "rgba(100,180,100,0.3)" : "rgba(255,255,255,0.1)"}`,
+                            color: u.role === "admin" ? "#c9a84c" : u.role === "author" ? "#6db86d" : "rgba(240,230,208,0.4)",
+                          }}
+                        >
+                          <option value="user">user</option>
+                          <option value="author">author</option>
+                          <option value="admin">admin</option>
+                        </select>
+                      </td>
+                      <td style={{ ...S.td, color: "rgba(240,230,208,0.3)", fontSize: 11 }}>
+                        {new Date(u.createdAt).toLocaleDateString("vi-VN")}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -201,15 +329,76 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* COMMENTS */}
+          {/* ── COMMENTS ── */}
           {activeTab === "comments" && (
-            <div style={{ textAlign: "center", padding: "80px 0" }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>💬</div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: "rgba(240,230,208,0.3)" }}>Tính năng quản lý bình luận sẽ sớm có!</div>
+            <div style={S.tableWrap}>
+              <div style={S.tableHead}>
+                <span style={S.tableHeadText}>Tổng: {comments.length} bình luận</span>
+              </div>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid rgba(201,168,76,0.08)" }}>
+                    {["Người Dùng", "Nội Dung", "Manga", "Ngày", "Thao Tác"].map(h => (
+                      <th key={h} style={S.th}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    Array.from({ length: 6 }).map((_, i) => (
+                      <tr key={i}><td colSpan={5} style={{ padding: "12px 20px" }}><div className="sk" style={{ height: 20 }} /></td></tr>
+                    ))
+                  ) : comments.length === 0 ? (
+                    <tr><td colSpan={5} style={{ padding: "60px 20px", textAlign: "center", color: "rgba(240,230,208,0.3)", fontFamily: "'Inter',sans-serif", fontSize: 13 }}>Chưa có bình luận nào</td></tr>
+                  ) : comments.map((c: any) => (
+                    <tr key={c.id} className="trow" style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                      <td style={{ ...S.td, color: "#c9a84c", fontSize: 12 }}>{c.user?.name}</td>
+                      <td style={{ ...S.td, maxWidth: 320 }}>
+                        <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: "rgba(240,230,208,0.7)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.content}</p>
+                      </td>
+                      <td style={{ ...S.td, color: "rgba(240,230,208,0.4)", fontSize: 12 }}>{c.manga?.title || "—"}</td>
+                      <td style={{ ...S.td, color: "rgba(240,230,208,0.3)", fontSize: 11 }}>{new Date(c.createdAt).toLocaleDateString("vi-VN")}</td>
+                      <td style={S.td}>
+                        <button className="abtn" onClick={() => deleteComment(c.id)} style={S.delBtn}>Xóa</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
+
         </div>
-      </div>
+      </main>
     </div>
   );
 }
+
+const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }`;
+
+const S: Record<string, React.CSSProperties> = {
+  root:         { minHeight: "100vh", background: "#080808", color: "#f0e6d0", display: "flex" },
+  center:       { minHeight: "100vh", background: "#080808", display: "flex", alignItems: "center", justifyContent: "center" },
+  spinner:      { width: 40, height: 40, border: "3px solid rgba(201,168,76,0.2)", borderTop: "3px solid #c9a84c", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
+  authCard:     { background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 16, padding: "48px 40px", width: "100%", maxWidth: 380, textAlign: "center" },
+  authIcon:     { fontSize: 40, marginBottom: 12 },
+  authTitle:    { fontFamily: "'Cinzel',serif", fontSize: 26, color: "#c9a84c", letterSpacing: "0.1em", marginBottom: 6 },
+  authSub:      { fontFamily: "'Inter',sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)", letterSpacing: "0.2em" },
+  goldBtn:      { width: "100%", padding: 13, background: "linear-gradient(135deg,#c9a84c,#8b6914)", border: "none", borderRadius: 8, color: "#080808", fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 700, cursor: "pointer" },
+  ghostBtn:     { padding: "9px 16px", background: "transparent", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 6, color: "rgba(240,230,208,0.4)", fontFamily: "'Inter',sans-serif", fontSize: 12, cursor: "pointer" },
+  sidebar:      { width: 220, background: "rgba(255,255,255,0.015)", borderRight: "1px solid rgba(201,168,76,0.08)", display: "flex", flexDirection: "column", flexShrink: 0 },
+  sidebarHead:  { padding: "28px 24px 24px", borderBottom: "1px solid rgba(201,168,76,0.08)" },
+  main:         { flex: 1, overflow: "auto" },
+  topBar:       { padding: "20px 32px", borderBottom: "1px solid rgba(201,168,76,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" },
+  statCard:     { background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,168,76,0.1)", borderRadius: 12, padding: "22px 20px" },
+  card:         { background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,168,76,0.08)", borderRadius: 12, padding: 24 },
+  cardTitle:    { fontFamily: "'Cinzel',serif", fontSize: 15, color: "#c9a84c", marginBottom: 16 },
+  tableWrap:    { background: "rgba(255,255,255,0.02)", border: "1px solid rgba(201,168,76,0.08)", borderRadius: 12, overflow: "hidden" },
+  tableHead:    { padding: "16px 20px", borderBottom: "1px solid rgba(201,168,76,0.06)" },
+  tableHeadText:{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: "rgba(240,230,208,0.4)" },
+  th:           { padding: "12px 16px", textAlign: "left" as const, fontFamily: "'Inter',sans-serif", fontSize: 10, color: "rgba(240,230,208,0.3)", letterSpacing: "0.15em", textTransform: "uppercase" as const },
+  td:           { padding: "12px 16px", fontFamily: "'Inter',sans-serif", fontSize: 13 },
+  viewBtn:      { padding: "5px 10px", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 5, color: "#c9a84c", fontFamily: "'Inter',sans-serif", fontSize: 11 },
+  delBtn:       { padding: "5px 10px", background: "rgba(255,80,80,0.1)", border: "1px solid rgba(255,80,80,0.2)", borderRadius: 5, color: "#ff5050", fontFamily: "'Inter',sans-serif", fontSize: 11 },
+};

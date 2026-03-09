@@ -72,7 +72,7 @@ function MangaSection({
               )}
 
               <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {(manga.views ?? 0) > 100 && (
+                {(manga.views ?? 0) >= 20 && (
                   <span
                     style={{
                       padding: "4px 8px",
@@ -89,23 +89,24 @@ function MangaSection({
                   </span>
                 )}
 
-                {new Date(manga.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && (
-                  <span
-                    style={{
-                      padding: "4px 8px",
-                      borderRadius: 999,
-                      background: "rgba(255,255,255,0.08)",
-                      border: "1px solid rgba(201,168,76,0.25)",
-                      color: "#f0e6d0",
-                      fontFamily: "'Inter',sans-serif",
-                      fontSize: 10,
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                    }}
-                  >
-                    NEW
-                  </span>
-                )}
+                {manga.coverImage &&
+                  new Date(manga.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && (
+                    <span
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: 999,
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1px solid rgba(201,168,76,0.25)",
+                        color: "#f0e6d0",
+                        fontFamily: "'Inter',sans-serif",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                      }}
+                    >
+                      NEW
+                    </span>
+                  )}
 
                 {manga.genre?.[0] && (
                   <span
@@ -122,17 +123,6 @@ function MangaSection({
                     {manga.genre[0]}
                   </span>
                 )}
-              </div>
-
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "60%", background: "linear-gradient(transparent,rgba(8,8,8,0.95))" }} />
-
-              <div style={{ position: "absolute", bottom: 10, left: 10, right: 10, display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontFamily: "'Inter',sans-serif", color: "#c9a84c", fontSize: 11, fontWeight: 500 }}>
-                  ⭐ {manga.avgRating?.toFixed(1) || "0.0"}
-                </span>
-                <span style={{ fontFamily: "'Inter',sans-serif", color: "rgba(240,230,208,0.4)", fontSize: 10 }}>
-                  👁 {manga.views ?? 0}
-                </span>
               </div>
 
               {hoveredManga === manga.id && (
@@ -154,7 +144,7 @@ function MangaSection({
                       borderRadius: 6,
                       fontFamily: "'Inter',sans-serif",
                       fontSize: 13,
-                      fontWeight: 600,
+                      fontWeight: 700,
                       color: "#080808",
                     }}
                   >
@@ -167,43 +157,31 @@ function MangaSection({
             <h3
               style={{
                 fontFamily: "'Cormorant Garamond',serif",
-                fontSize: 16,
-                fontWeight: 600,
+                fontSize: 18,
+                fontWeight: 700,
                 color: "#f0e6d0",
-                marginBottom: 4,
-                lineHeight: 1.3,
+                marginBottom: 6,
+                lineHeight: 1.25,
                 display: "-webkit-box",
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical",
                 overflow: "hidden",
+                minHeight: 44,
               } as any}
             >
               {manga.title}
             </h3>
 
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)", marginBottom: 4 }}>
-              @{manga.author?.name}
-            </div>
-
             <div
               style={{
                 fontFamily: "'Inter',sans-serif",
-                fontSize: 11,
-                color: "rgba(240,230,208,0.34)",
-                lineHeight: 1.5,
-                marginBottom: 6,
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                minHeight: 32,
-              } as any}
+                fontSize: 12,
+                color: "#c9a84c",
+                fontWeight: 700,
+                letterSpacing: "0.04em"
+              }}
             >
-              {manga.description || "Khám phá bộ manga này ngay."}
-            </div>
-
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: "rgba(240,230,208,0.38)" }}>
-              Ch. {manga._count?.chapters ?? 0}
+              Chương mới nhất: {manga._count?.chapters ?? 0}
             </div>
           </div>
         ))}
@@ -310,58 +288,58 @@ function HotMangaCarousel({
         {displayMangas.length > 1 && (
           <>
             <button
-  className="hot-nav-btn"
-  onClick={goPrev}
-  style={{
-    position: "absolute",
-    left: -8,
-    top: "34%",
-    transform: "translateY(-50%)",
-    zIndex: 3,
-    width: 52,
-    height: 52,
-    borderRadius: "50%",
-    border: "1px solid rgba(201,168,76,0.28)",
-    background: "rgba(8,8,8,0.88)",
-    color: "#c9a84c",
-    cursor: "pointer",
-    fontSize: 26,
-    fontWeight: 700,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  }}
-  aria-label="Trượt sang trái"
->
-  ‹
-</button>
+              className="hot-nav-btn"
+              onClick={goPrev}
+              style={{
+                position: "absolute",
+                left: -8,
+                top: "34%",
+                transform: "translateY(-50%)",
+                zIndex: 3,
+                width: 52,
+                height: 52,
+                borderRadius: "50%",
+                border: "1px solid rgba(201,168,76,0.28)",
+                background: "rgba(8,8,8,0.88)",
+                color: "#c9a84c",
+                cursor: "pointer",
+                fontSize: 26,
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              aria-label="Trượt sang trái"
+            >
+              ‹
+            </button>
 
             <button
-  className="hot-nav-btn"
-  onClick={goNext}
-  style={{
-    position: "absolute",
-    right: -8,
-    top: "34%",
-    transform: "translateY(-50%)",
-    zIndex: 3,
-    width: 52,
-    height: 52,
-    borderRadius: "50%",
-    border: "1px solid rgba(201,168,76,0.28)",
-    background: "rgba(8,8,8,0.88)",
-    color: "#c9a84c",
-    cursor: "pointer",
-    fontSize: 26,
-    fontWeight: 700,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  }}
-  aria-label="Trượt sang phải"
->
-  ›
-</button>
+              className="hot-nav-btn"
+              onClick={goNext}
+              style={{
+                position: "absolute",
+                right: -8,
+                top: "34%",
+                transform: "translateY(-50%)",
+                zIndex: 3,
+                width: 52,
+                height: 52,
+                borderRadius: "50%",
+                border: "1px solid rgba(201,168,76,0.28)",
+                background: "rgba(8,8,8,0.88)",
+                color: "#c9a84c",
+                cursor: "pointer",
+                fontSize: 26,
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              aria-label="Trượt sang phải"
+            >
+              ›
+            </button>
           </>
         )}
 
@@ -434,17 +412,6 @@ function HotMangaCarousel({
                     )}
                   </div>
 
-                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "60%", background: "linear-gradient(transparent,rgba(8,8,8,0.95))" }} />
-
-                  <div style={{ position: "absolute", bottom: 10, left: 10, right: 10, display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontFamily: "'Inter',sans-serif", color: "#c9a84c", fontSize: 11, fontWeight: 500 }}>
-                      ⭐ {manga.avgRating?.toFixed(1) || "0.0"}
-                    </span>
-                    <span style={{ fontFamily: "'Inter',sans-serif", color: "rgba(240,230,208,0.4)", fontSize: 10 }}>
-                      👁 {manga.views ?? 0}
-                    </span>
-                  </div>
-
                   {hoveredManga === `${manga.id}-${index}` && (
                     <div
                       style={{
@@ -464,7 +431,7 @@ function HotMangaCarousel({
                           borderRadius: 6,
                           fontFamily: "'Inter',sans-serif",
                           fontSize: 13,
-                          fontWeight: 600,
+                          fontWeight: 700,
                           color: "#080808",
                         }}
                       >
@@ -477,43 +444,31 @@ function HotMangaCarousel({
                 <h3
                   style={{
                     fontFamily: "'Cormorant Garamond',serif",
-                    fontSize: 16,
-                    fontWeight: 600,
+                    fontSize: 18,
+                    fontWeight: 700,
                     color: "#f0e6d0",
-                    marginBottom: 4,
-                    lineHeight: 1.3,
+                    marginBottom: 6,
+                    lineHeight: 1.25,
                     display: "-webkit-box",
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: "vertical",
                     overflow: "hidden",
+                    minHeight: 44,
                   } as any}
                 >
                   {manga.title}
                 </h3>
 
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: "rgba(240,230,208,0.3)", marginBottom: 4 }}>
-                  @{manga.author?.name}
-                </div>
-
                 <div
                   style={{
                     fontFamily: "'Inter',sans-serif",
-                    fontSize: 11,
-                    color: "rgba(240,230,208,0.34)",
-                    lineHeight: 1.5,
-                    marginBottom: 6,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                    minHeight: 32,
-                  } as any}
+                    fontSize: 12,
+                    color: "#c9a84c",
+                    fontWeight: 700,
+                    letterSpacing: "0.04em"
+                  }}
                 >
-                  {manga.description || "Khám phá bộ manga này ngay."}
-                </div>
-
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: "rgba(240,230,208,0.38)" }}>
-                  Ch. {manga._count?.chapters ?? 0}
+                  Chương mới nhất: {manga._count?.chapters ?? 0}
                 </div>
               </div>
             ))}
@@ -557,6 +512,7 @@ export default function Home() {
   const [hoveredManga, setHoveredManga] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [genreOpen, setGenreOpen] = useState(false);
   
 
   // Auth modal
@@ -812,49 +768,65 @@ const latestMangas = [...mangas]
   transform: translateY(-50%) scale(1.04);
 }
 `}</style>
-                              {/* AMBIENT */}
+                                                {/* AMBIENT */}
       <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, overflow:"hidden" }}>
         <div
           style={{
             position:"absolute",
-            inset:"-8% -10%",
-            display:"grid",
-            gridTemplateColumns:"repeat(6, 240px)",
-            gridAutoRows:"360px",
-            gap:"18px",
-            justifyContent:"center",
-            alignContent:"start",
-            transform:"perspective(1400px) rotateX(16deg) rotateY(-8deg) scale(1.08)",
+            inset:"-12% -14%",
+            transform:"perspective(1600px) rotateX(14deg) rotateY(-7deg) scale(1.04)",
             transformOrigin:"center top",
-            opacity:0.36,
-            filter:"blur(0.25px) saturate(0.95) brightness(0.82)",
+            opacity:0.45,
+            filter:"blur(0.2px) saturate(0.95) brightness(0.84)",
           }}
         >
           {[
-            "/manga-bg/c1.jpg",
-            "/manga-bg/c2.jpg",
-            "/manga-bg/c3.jpg",
-            "/manga-bg/c4.jpg",
-            "/manga-bg/c5.jpg",
-            "/manga-bg/c6.jpg",
-            "/manga-bg/c2.jpg",
-            "/manga-bg/c5.jpg",
-            "/manga-bg/c1.jpg",
-            "/manga-bg/c6.jpg",
-            "/manga-bg/c3.jpg",
-            "/manga-bg/c4.jpg",
-          ].map((src, i) => (
+            { src:"/manga-bg/c1.jpg", left:"-4%", top:"1%", width:170, height:250, rotate:-7 },
+            { src:"/manga-bg/c2.jpg", left:"8%", top:"6%", width:165, height:245, rotate:4 },
+            { src:"/manga-bg/c3.jpg", left:"20%", top:"0%", width:160, height:238, rotate:-5 },
+            { src:"/manga-bg/c4.jpg", left:"31%", top:"5%", width:172, height:252, rotate:6 },
+            { src:"/manga-bg/c5.jpg", left:"43%", top:"-1%", width:168, height:248, rotate:-4 },
+            { src:"/manga-bg/c6.jpg", left:"55%", top:"4%", width:162, height:242, rotate:5 },
+            { src:"/manga-bg/c7.jpg", left:"66%", top:"0%", width:170, height:250, rotate:-6 },
+            { src:"/manga-bg/c8.jpg", left:"78%", top:"5%", width:164, height:244, rotate:4 },
+            { src:"/manga-bg/c1.jpg", left:"90%", top:"1%", width:160, height:240, rotate:-5 },
+
+            { src:"/manga-bg/c4.jpg", left:"2%", top:"30%", width:168, height:248, rotate:5 },
+            { src:"/manga-bg/c6.jpg", left:"14%", top:"35%", width:162, height:242, rotate:-6 },
+            { src:"/manga-bg/c2.jpg", left:"26%", top:"29%", width:170, height:250, rotate:4 },
+            { src:"/manga-bg/c8.jpg", left:"38%", top:"34%", width:166, height:246, rotate:-5 },
+            { src:"/manga-bg/c3.jpg", left:"50%", top:"30%", width:160, height:238, rotate:6 },
+            { src:"/manga-bg/c5.jpg", left:"61%", top:"35%", width:170, height:250, rotate:-4 },
+            { src:"/manga-bg/c7.jpg", left:"73%", top:"29%", width:164, height:244, rotate:5 },
+            { src:"/manga-bg/c1.jpg", left:"85%", top:"34%", width:168, height:248, rotate:-6 },
+
+            { src:"/manga-bg/c2.jpg", left:"-2%", top:"58%", width:165, height:245, rotate:4 },
+            { src:"/manga-bg/c5.jpg", left:"10%", top:"63%", width:170, height:250, rotate:-5 },
+            { src:"/manga-bg/c3.jpg", left:"22%", top:"57%", width:160, height:238, rotate:6 },
+            { src:"/manga-bg/c6.jpg", left:"34%", top:"62%", width:162, height:242, rotate:-4 },
+            { src:"/manga-bg/c8.jpg", left:"46%", top:"58%", width:166, height:246, rotate:5 },
+            { src:"/manga-bg/c4.jpg", left:"58%", top:"63%", width:172, height:252, rotate:-6 },
+            { src:"/manga-bg/c1.jpg", left:"70%", top:"57%", width:168, height:248, rotate:4 },
+            { src:"/manga-bg/c7.jpg", left:"82%", top:"62%", width:164, height:244, rotate:-5 },
+            { src:"/manga-bg/c2.jpg", left:"94%", top:"58%", width:160, height:240, rotate:6 },
+          ].map((item, i) => (
             <div
               key={i}
               style={{
-                borderRadius:18,
+                position:"absolute",
+                left:item.left,
+                top:item.top,
+                width:item.width,
+                height:item.height,
+                borderRadius:14,
                 overflow:"hidden",
                 background:"#0b0c10",
-                boxShadow:"0 10px 40px rgba(0,0,0,0.35)",
+                boxShadow:"0 8px 28px rgba(0,0,0,0.32)",
+                transform:`rotate(${item.rotate}deg)`,
               }}
             >
               <img
-                src={src}
+                src={item.src}
                 alt=""
                 style={{
                   width:"100%",
@@ -871,7 +843,7 @@ const latestMangas = [...mangas]
           style={{
             position:"absolute",
             inset:0,
-            background:"linear-gradient(180deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.46) 24%, rgba(0,0,0,0.52) 52%, rgba(0,0,0,0.78) 100%)"
+            background:"linear-gradient(180deg, rgba(0,0,0,0.74) 0%, rgba(0,0,0,0.48) 24%, rgba(0,0,0,0.54) 52%, rgba(0,0,0,0.80) 100%)"
           }}
         />
 
@@ -879,7 +851,7 @@ const latestMangas = [...mangas]
           style={{
             position:"absolute",
             inset:0,
-            background:"radial-gradient(circle at 50% 18%, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 18%, transparent 42%)"
+            background:"radial-gradient(circle at 50% 18%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.022) 18%, transparent 42%)"
           }}
         />
 
@@ -927,22 +899,101 @@ const latestMangas = [...mangas]
           </div>
         </div>
 
-        <div className="desktop-menu" style={{ display: "flex", alignItems: "center", gap: 32 }}>
-          {["Khám Phá", "Bảng Xếp Hạng", "Tác Giả"].map((item) => (
-            <span
-              key={item}
-              className="nav-link"
-              style={{
-                fontFamily: "'Inter',sans-serif",
-                fontSize: 13,
-                color: "rgba(240,230,208,0.5)",
-                letterSpacing: "0.05em"
-              }}
-            >
-              {item}
-            </span>
-          ))}
-        </div>
+        <div className="desktop-menu" style={{ display: "flex", alignItems: "center", gap: 24 }}>
+  <div style={{ position:"relative" }}>
+    <button
+      onClick={() => setGenreOpen(v => !v)}
+      style={{
+        padding:"8px 14px",
+        borderRadius:999,
+        background:selectedGenre !== "Tất cả" ? "rgba(201,168,76,0.14)" : "rgba(255,255,255,0.03)",
+        border:selectedGenre !== "Tất cả" ? "1px solid rgba(201,168,76,0.32)" : "1px solid rgba(201,168,76,0.14)",
+        color:selectedGenre !== "Tất cả" ? "#f0e6d0" : "rgba(240,230,208,0.72)",
+        fontFamily:"'Inter',sans-serif",
+        fontSize:13,
+        fontWeight:600,
+        letterSpacing:"0.03em",
+        cursor:"pointer",
+        display:"flex",
+        alignItems:"center",
+        gap:8,
+        minWidth:150,
+        justifyContent:"space-between",
+        transition:"all 0.25s ease"
+      }}
+    >
+      <span>
+        {selectedGenre === "Tất cả" ? "Thể loại" : `Thể loại: ${selectedGenre}`}
+      </span>
+      <span style={{ color:"#c9a84c", fontSize:11 }}>
+        {genreOpen ? "▲" : "▼"}
+      </span>
+    </button>
+
+    {genreOpen && (
+      <div
+        style={{
+          position:"absolute",
+          top:"calc(100% + 10px)",
+          left:0,
+          minWidth:240,
+          padding:10,
+          borderRadius:14,
+          background:"rgba(12,12,14,0.96)",
+          border:"1px solid rgba(201,168,76,0.18)",
+          boxShadow:"0 18px 48px rgba(0,0,0,0.42)",
+          backdropFilter:"blur(14px)",
+          zIndex:60,
+          display:"flex",
+          flexDirection:"column",
+          gap:6
+        }}
+      >
+        {GENRES.map((g) => (
+          <button
+            key={g}
+            onClick={() => {
+              setSelectedGenre(g);
+              setGenreOpen(false);
+              const section = document.getElementById("manga-list");
+              section?.scrollIntoView({ behavior: "smooth" });
+            }}
+            style={{
+              width:"100%",
+              textAlign:"left",
+              padding:"10px 12px",
+              borderRadius:10,
+              background:selectedGenre===g ? "linear-gradient(135deg,#c9a84c,#8b6914)" : "rgba(255,255,255,0.03)",
+              border:selectedGenre===g ? "none" : "1px solid rgba(201,168,76,0.10)",
+              color:selectedGenre===g ? "#080808" : "rgba(240,230,208,0.78)",
+              fontFamily:"'Inter',sans-serif",
+              fontSize:13,
+              fontWeight:selectedGenre===g ? 700 : 500,
+              cursor:"pointer"
+            }}
+          >
+            {g}
+          </button>
+        ))}
+      </div>
+    )}
+  </div>
+
+  {["Bảng Xếp Hạng", "Tác Giả"].map((item) => (
+    <span
+      key={item}
+      className="nav-link"
+      style={{
+        fontFamily:"'Inter',sans-serif",
+        fontSize:13,
+        color:"rgba(240,230,208,0.5)",
+        letterSpacing:"0.05em"
+      }}
+    >
+      {item}
+    </span>
+  ))}
+</div>
 
         <div className="desktop-menu" style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div
@@ -1111,7 +1162,7 @@ const latestMangas = [...mangas]
           </div>
         </div>
       )}
-                  {/* HERO */}
+                        {/* HERO */}
       <div
         style={{
           position: "relative",
@@ -1121,6 +1172,21 @@ const latestMangas = [...mangas]
           overflow: "hidden"
         }}
       >
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: 0,
+            transform: "translateX(-50%)",
+            width: "min(920px, 92%)",
+            height: 340,
+            background: "radial-gradient(circle at center, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.24) 42%, rgba(0,0,0,0.04) 72%, transparent 100%)",
+            filter: "blur(10px)",
+            pointerEvents: "none",
+            zIndex: -1
+          }}
+        />
+
         <div className="hero-line" style={{ maxWidth: 180, margin: "0 auto 12px" }} />
 
         <div
@@ -1130,60 +1196,63 @@ const latestMangas = [...mangas]
             letterSpacing: "0.32em",
             color: "#c9a84c",
             textTransform: "uppercase",
-            marginBottom: 10
+            marginBottom: 10,
+            textShadow: "0 2px 10px rgba(0,0,0,0.55)"
           }}
         >
           ✦ Nền Tảng Đọc Và Sáng Tác Manga Hàng Đầu ✦
         </div>
 
         <h1
-  className="hero-main-title"
-  style={{
-    fontFamily:"'Cinzel',serif",
-    fontWeight:700,
-    fontSize:"clamp(30px,5.2vw,64px)",
-    lineHeight:1.02,
-    marginBottom:2,
-    letterSpacing:"0.02em"
-  }}
->
-  <span className="title-gradient">THẾ GIỚI M</span>
-  <span
-    style={{
-      color:"#c9a84c",
-      textShadow:"0 0 24px rgba(201,168,76,0.7),0 0 48px rgba(201,168,76,0.3)",
-      WebkitTextFillColor:"#c9a84c"
-    }}
-  >
-    AI
-  </span>
-  <span className="title-gradient">NGA</span>
-</h1>
+          className="hero-main-title"
+          style={{
+            fontFamily: "'Cinzel',serif",
+            fontWeight: 700,
+            fontSize: "clamp(30px,5.2vw,64px)",
+            lineHeight: 1.02,
+            marginBottom: 2,
+            letterSpacing: "0.02em",
+            textShadow: "0 4px 24px rgba(0,0,0,0.42)"
+          }}
+        >
+          <span className="title-gradient">THẾ GIỚI M</span>
+          <span
+            style={{
+              color: "#c9a84c",
+              textShadow: "0 0 24px rgba(201,168,76,0.7),0 0 48px rgba(201,168,76,0.3)",
+              WebkitTextFillColor: "#c9a84c"
+            }}
+          >
+            AI
+          </span>
+          <span className="title-gradient">NGA</span>
+        </h1>
 
         <h2
-  className="hero-sub-title"
-  style={{
-    fontFamily:"'Cinzel',serif",
-    fontWeight:400,
-    fontSize:"clamp(18px,3vw,34px)",
-    lineHeight:1.1,
-    marginBottom:12,
-    letterSpacing:"0.12em",
-    color:"rgba(240,230,208,0.34)"
-  }}
->
-  M
-  <span
-    style={{
-      color:"#c9a84c",
-      textShadow:"0 0 14px rgba(201,168,76,0.45)",
-      fontWeight:700
-    }}
-  >
-    AI
-  </span>
-  NGA · KHÔNG CÓ GIỚI HẠN
-</h2>
+          className="hero-sub-title"
+          style={{
+            fontFamily: "'Cinzel',serif",
+            fontWeight: 400,
+            fontSize: "clamp(18px,3vw,34px)",
+            lineHeight: 1.1,
+            marginBottom: 12,
+            letterSpacing: "0.12em",
+            color: "rgba(240,230,208,0.42)",
+            textShadow: "0 2px 14px rgba(0,0,0,0.48)"
+          }}
+        >
+          M
+          <span
+            style={{
+              color: "#c9a84c",
+              textShadow: "0 0 14px rgba(201,168,76,0.45)",
+              fontWeight: 700
+            }}
+          >
+            AI
+          </span>
+          NGA · KHÔNG CÓ GIỚI HẠN
+        </h2>
 
         <div className="hero-line" style={{ maxWidth: 180, margin: "0 auto 12px" }} />
 
@@ -1191,11 +1260,12 @@ const latestMangas = [...mangas]
           style={{
             fontFamily: "'Cormorant Garamond',serif",
             fontSize: "clamp(13px,1.35vw,16px)",
-            color: "rgba(240,230,208,0.40)",
-            maxWidth: 500,
+            color: "rgba(240,230,208,0.56)",
+            maxWidth: 520,
             margin: "0 auto",
-            lineHeight: 1.45,
-            fontWeight: 300
+            lineHeight: 1.5,
+            fontWeight: 400,
+            textShadow: "0 2px 10px rgba(0,0,0,0.52)"
           }}
         >
           Mainga là sự kết hợp giữa Manga & AI. Nơi mà chính bạn là "main" trong câu chuyện của mình.
@@ -1204,29 +1274,7 @@ const latestMangas = [...mangas]
 
             {/* MANGA LIST */}
       <div id="manga-list" style={{ position:"relative", zIndex:1, maxWidth:1200, margin:"0 auto", padding:"0 40px" }}>
-        <div style={{ display:"flex", gap:8, marginBottom:32, flexWrap:"wrap", justifyContent:"center" }}>
-          {GENRES.map(g => (
-            <button
-              key={g}
-              className="genre-pill"
-              onClick={() => setSelectedGenre(g)}
-              style={{
-                padding:"7px 18px",
-                borderRadius:30,
-                background:selectedGenre===g?"linear-gradient(135deg,#c9a84c,#8b6914)":"rgba(255,255,255,0.03)",
-                border:selectedGenre===g?"none":"1px solid rgba(201,168,76,0.15)",
-                color:selectedGenre===g?"#080808":"rgba(240,230,208,0.45)",
-                fontFamily:"'Inter',sans-serif",
-                fontSize:12,
-                fontWeight:selectedGenre===g?600:400,
-                letterSpacing:"0.08em"
-              }}
-            >
-              {g}
-            </button>
-          ))}
-        </div>
-
+                        
         {mangasLoading ? (
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))", gap:24, marginBottom:80 }}>
             {Array.from({ length: 8 }).map((_, i) => (

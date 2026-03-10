@@ -3,20 +3,29 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+type MangaListItem = {
+  ratings: { score: number }[];
+} & Record<string, any>;
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const genre = searchParams.get("genre");
   const search = searchParams.get("q");
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "20");
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "20", 10);
 
   const where: any = {};
-  if (genre) where.genre = { has: genre };
-  if (search)
+
+  if (genre) {
+    where.genre = { has: genre };
+  }
+
+  if (search) {
     where.OR = [
       { title: { contains: search, mode: "insensitive" } },
       { author: { name: { contains: search, mode: "insensitive" } } },
     ];
+  }
 
   const [mangas, total] = await Promise.all([
     prisma.manga.findMany({
@@ -33,11 +42,14 @@ export async function GET(req: NextRequest) {
     prisma.manga.count({ where }),
   ]);
 
-  const result = mangas.map((m) => ({
+  const result = mangas.map((m: MangaListItem) => ({
     ...m,
     avgRating:
       m.ratings.length > 0
-        ? m.ratings.reduce((a, b) => a + b.score, 0) / m.ratings.length
+        ? m.ratings.reduce(
+            (a: number, b: { score: number }) => a + b.score,
+            0
+          ) / m.ratings.length
         : 0,
     ratingCount: m.ratings.length,
     ratings: undefined,
@@ -48,12 +60,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user)
+
+  if (!session?.user) {
     return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
+  }
 
   const { title, description, coverImage, genre, status } = await req.json();
-  if (!title)
+
+  if (!title) {
     return NextResponse.json({ error: "Thiếu tên manga" }, { status: 400 });
+  }
 
   const manga = await prisma.manga.create({
     data: {

@@ -18,15 +18,18 @@ export async function GET(
     },
   });
 
-  if (!manga)
+  if (!manga) {
     return NextResponse.json({ error: "Không tìm thấy manga" }, { status: 404 });
+  }
 
   const avgRating =
     manga.ratings.length > 0
-      ? manga.ratings.reduce((a, b) => a + b.score, 0) / manga.ratings.length
+      ? manga.ratings.reduce(
+          (a: number, b: { score: number }) => a + b.score,
+          0
+        ) / manga.ratings.length
       : 0;
 
-  // Increment manga views
   await prisma.manga.update({
     where: { id },
     data: { views: { increment: 1 } },
@@ -46,19 +49,25 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
-  if (!session?.user)
+
+  if (!session?.user) {
     return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
+  }
 
   const manga = await prisma.manga.findUnique({ where: { id } });
-  if (!manga)
+
+  if (!manga) {
     return NextResponse.json({ error: "Không tìm thấy" }, { status: 404 });
+  }
 
   const userRole = (session.user as any).role;
   const userId = (session.user as any).id;
 
-  if (manga.authorId !== userId && userRole !== "admin")
+  if (manga.authorId !== userId && userRole !== "admin") {
     return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
+  }
 
   await prisma.manga.delete({ where: { id } });
+
   return NextResponse.json({ success: true });
 }

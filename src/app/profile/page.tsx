@@ -58,7 +58,6 @@ export default function Profile() {
     <div style={S.root}>
       <style>{FONTS + CSS}</style>
 
-      {/* NAVBAR */}
       <nav style={S.nav}>
         <div onClick={() => router.push("/")} style={S.navLogo}>
           <img
@@ -88,7 +87,6 @@ export default function Profile() {
       </nav>
 
       <div style={S.container}>
-        {/* PROFILE HEADER */}
         <div className="fade-up" style={S.headerCard}>
           <div style={S.avatarWrap}>
             {user?.image ? (
@@ -141,7 +139,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* AUTHOR BANNER */}
         {isAuthor ? (
           <div className="fade-up" style={S.banner}>
             <div>
@@ -178,7 +175,6 @@ export default function Profile() {
           </div>
         )}
 
-        {/* TABS */}
         <div style={S.tabBar}>
           {[
             ["history", "📜 Lịch Sử Đọc", history.length],
@@ -215,9 +211,7 @@ export default function Profile() {
           ))}
         </div>
 
-        {/* CONTENT */}
         <div className="fade-up">
-          {/* HISTORY TAB */}
           {activeTab === "history" &&
             (history.length === 0 ? (
               <Empty
@@ -261,7 +255,6 @@ export default function Profile() {
               </div>
             ))}
 
-          {/* FOLLOWING TAB */}
           {activeTab === "following" &&
             (follows.length === 0 ? (
               <Empty
@@ -306,7 +299,6 @@ export default function Profile() {
             ))}
         </div>
 
-        {/* LOGOUT */}
         <div
           style={{
             marginTop: 60,

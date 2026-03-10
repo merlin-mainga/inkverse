@@ -11,6 +11,7 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
       name: "credentials",
@@ -42,20 +43,23 @@ export const authOptions: NextAuthOptions = {
   ],
   session: { strategy: "jwt" },
   callbacks: {
-    async jwt({ token, user, trigger }) {
-      // On sign in, attach role
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
       }
-      // On every request, re-fetch role from DB to stay up to date
+
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
           select: { role: true },
         });
-        if (dbUser) token.role = dbUser.role;
+
+        if (dbUser) {
+          token.role = dbUser.role;
+        }
       }
+
       return token;
     },
     async session({ session, token }) {
@@ -63,26 +67,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
       }
+
       return session;
-    },
-    async signIn({ user, account }) {
-      // Auto-create user on Google sign-in if not exists
-      if (account?.provider === "google") {
-        const existing = await prisma.user.findUnique({
-          where: { email: user.email! },
-        });
-        if (!existing) {
-          await prisma.user.create({
-            data: {
-              email: user.email!,
-              name: user.name,
-              image: user.image,
-              role: "user",
-            },
-          });
-        }
-      }
-      return true;
     },
   },
   pages: {

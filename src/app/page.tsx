@@ -1194,7 +1194,7 @@ export default function HomePage() {
 
           <button
             className="gold-btn"
-            onClick={() => (isLoggedIn ? router.push("/dashboard/upload") : setShowAuth(true))}
+            onClick={() => (isLoggedIn ? router.push("/dashboard") : setShowAuth(true))}
             style={{
               padding: "9px 20px",
               borderRadius: 6,

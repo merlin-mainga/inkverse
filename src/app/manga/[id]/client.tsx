@@ -160,6 +160,12 @@ export default function MangaDetailClient() {
   const firstChapter = [...chapters].sort((a, b) => a.chapterNum - b.chapterNum)[0];
   const latestChapter = [...chapters].sort((a, b) => b.chapterNum - a.chapterNum)[0];
   const continueChapter = history?.chapter ?? null;
+  const shortDescription =
+    manga.description?.trim()
+      ? manga.description.length > 120
+        ? `${manga.description.slice(0, 120)}...`
+        : manga.description
+      : "Chưa có mô tả ngắn cho manga này.";
 
   return (
     <div style={S.root}>
@@ -168,7 +174,8 @@ export default function MangaDetailClient() {
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .detail-back:hover { color: #c9a84c !important; }
+        .detail-home:hover { transform: translateY(-1px); box-shadow: 0 0 20px rgba(201,168,76,0.16); opacity: 0.96; }
+        .detail-brand:hover { opacity: 0.96; }
         .detail-btn { transition: all 0.22s ease; cursor: pointer; }
         .detail-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 20px rgba(201,168,76,0.16); }
         .chapter-row { transition: all 0.2s ease; cursor: pointer; }
@@ -194,6 +201,15 @@ export default function MangaDetailClient() {
           .detail-cover-wrap {
             margin: 0 auto;
           }
+          .detail-nav {
+            flex-wrap: wrap;
+            align-items: center !important;
+            gap: 12px !important;
+          }
+          .detail-nav-title {
+            width: 100%;
+            order: 3;
+          }
         }
       `}</style>
 
@@ -203,12 +219,31 @@ export default function MangaDetailClient() {
         <div style={S.ambientOverlay} />
       </div>
 
-      <nav style={S.nav}>
-        <span className="detail-back" onClick={() => router.push("/")} style={S.navBack}>
+      <nav className="detail-nav" style={S.nav}>
+        <div
+          className="detail-brand"
+          onClick={() => router.push("/")}
+          style={S.navBrandWrap}
+        >
+          <img src="/logo.png" alt="MAINGA" style={S.navLogo} />
+          <div style={S.navBrandText}>
+            M<span style={{ color: "#c9a84c" }}>AI</span>NGA
+          </div>
+        </div>
+
+        <button
+          className="detail-btn detail-home"
+          onClick={() => router.push("/")}
+          style={S.navHomeBtn}
+        >
           ← Trang chủ
-        </span>
+        </button>
+
         <div style={S.navDivider} />
-        <span style={S.navTitle}>{manga.title}</span>
+
+        <span className="detail-nav-title" style={S.navTitle}>
+          {manga.title}
+        </span>
       </nav>
 
       <div style={S.container}>
@@ -239,6 +274,21 @@ export default function MangaDetailClient() {
                 </span>
                 <span style={S.metaDot}>•</span>
                 <span>{manga.status === "completed" ? "Hoàn thành" : "Đang tiến hành"}</span>
+              </div>
+
+              <div style={S.quickInfoWrap}>
+                <div style={S.quickInfoChip}>
+                  <span style={S.quickInfoLabel}>Thể loại</span>
+                  <span style={S.quickInfoValue}>
+                    {manga.genre?.length ? manga.genre.join(" • ") : "Chưa cập nhật"}
+                  </span>
+                </div>
+                <div style={{ ...S.quickInfoChip, ...S.quickInfoChipWide }}>
+                  <span style={S.quickInfoLabel}>Mô tả</span>
+                  <span style={S.quickInfoValue}>
+                    {shortDescription}
+                  </span>
+                </div>
               </div>
 
               <p style={S.desc}>{manga.description || "Chưa có mô tả cho bộ manga này."}</p>
@@ -276,7 +326,11 @@ export default function MangaDetailClient() {
                     className="detail-btn"
                     disabled={!firstChapter}
                     onClick={() => firstChapter && router.push(`/manga/${id}/chapter/${firstChapter.id}`)}
-                    style={{ ...S.primaryBtn, opacity: firstChapter ? 1 : 0.45, cursor: firstChapter ? "pointer" : "default" }}
+                    style={{
+                      ...S.primaryBtn,
+                      opacity: firstChapter ? 1 : 0.45,
+                      cursor: firstChapter ? "pointer" : "default",
+                    }}
                   >
                     📖 Đọc từ đầu
                   </button>
@@ -582,19 +636,47 @@ const S: Record<string, CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: 16,
-    height: 60,
+    minHeight: 72,
   },
-  navBack: {
+  navBrandWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    cursor: "pointer",
+    flexShrink: 0,
+  },
+  navLogo: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    objectFit: "contain",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.24)",
+  },
+  navBrandText: {
+    fontFamily: "'Cinzel',serif",
+    fontWeight: 700,
+    fontSize: 18,
+    letterSpacing: "0.1em",
+    color: "#f0e6d0",
+    whiteSpace: "nowrap",
+  },
+  navHomeBtn: {
+    padding: "10px 16px",
+    borderRadius: 999,
+    border: "1px solid rgba(201,168,76,0.24)",
+    background: "linear-gradient(135deg, rgba(201,168,76,0.12), rgba(139,105,20,0.10))",
+    color: "#e8d18a",
+    cursor: "pointer",
     fontFamily: "'Inter',sans-serif",
     fontSize: 13,
-    color: "rgba(240,230,208,0.56)",
-    cursor: "pointer",
-    transition: "color 0.2s",
-    whiteSpace: "nowrap",
+    fontWeight: 700,
+    letterSpacing: "0.02em",
+    boxShadow: "0 10px 28px rgba(0,0,0,0.20)",
+    flexShrink: 0,
   },
   navDivider: {
     width: 1,
-    height: 20,
+    height: 24,
     background: "rgba(255,255,255,0.08)",
     flexShrink: 0,
   },
@@ -700,6 +782,38 @@ const S: Record<string, CSSProperties> = {
   },
   metaDot: {
     opacity: 0.3,
+  },
+  quickInfoWrap: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 16,
+  },
+  quickInfoChip: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    padding: "10px 14px",
+    borderRadius: 14,
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.06)",
+  },
+  quickInfoChipWide: {
+    minWidth: 320,
+    maxWidth: 520,
+  },
+  quickInfoLabel: {
+    fontFamily: "'Inter',sans-serif",
+    fontSize: 10,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "rgba(240,230,208,0.34)",
+  },
+  quickInfoValue: {
+    fontFamily: "'Inter',sans-serif",
+    fontSize: 13,
+    lineHeight: 1.45,
+    color: "rgba(240,230,208,0.78)",
   },
   desc: {
     fontFamily: "'Inter',sans-serif",

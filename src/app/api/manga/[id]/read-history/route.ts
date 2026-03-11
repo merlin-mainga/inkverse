@@ -9,7 +9,10 @@ export async function GET(
 ) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ history: null });
+
+  if (!session?.user) {
+    return NextResponse.json({ history: null });
+  }
 
   const history = await prisma.readHistory.findUnique({
     where: {
@@ -34,4 +37,38 @@ export async function POST(
 ) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
+  }
+
+  const { chapterId } = await req.json();
+
+  if (!chapterId) {
+    return NextResponse.json({ error: "Thiếu chapterId" }, { status: 400 });
+  }
+
+  const history = await prisma.readHistory.upsert({
+    where: {
+      userId_mangaId: {
+        userId: (session.user as any).id,
+        mangaId: id,
+      },
+    },
+    update: {
+      chapterId,
+    },
+    create: {
+      userId: (session.user as any).id,
+      mangaId: id,
+      chapterId,
+    },
+    include: {
+      chapter: {
+        select: { id: true, chapterNum: true, title: true },
+      },
+    },
+  });
+
+  return NextResponse.json({ history });
 }

@@ -145,10 +145,18 @@ export default function ChapterReaderClient() {
   if (error || !chapter) {
     return (
       <div style={S.center}>
-        <p style={{ ...S.loadingText, color: "#c9a84c" }}>⚠ {error || "Không tìm thấy chapter"}</p>
-        <button onClick={() => router.push(`/manga/${id}`)} style={S.backBtn}>
-          ← Quay lại manga
-        </button>
+        <p style={{ ...S.loadingText, color: "#c9a84c" }}>
+          ⚠ {error || "Không tìm thấy chapter"}
+        </p>
+
+        <div style={S.errorActionRow}>
+          <button onClick={() => router.push("/")} style={S.luxuryGhostBtn}>
+            Trang Chủ
+          </button>
+          <button onClick={() => router.push(`/manga/${id}`)} style={S.luxuryGoldBtn}>
+            Danh Sách Truyện
+          </button>
+        </div>
       </div>
     );
   }
@@ -174,10 +182,6 @@ export default function ChapterReaderClient() {
           box-shadow: 0 16px 42px rgba(0,0,0,0.34);
         }
 
-        .reader-link:hover {
-          color: #c9a84c !important;
-        }
-
         .reader-btn {
           transition: all 0.22s ease;
           cursor: pointer;
@@ -197,10 +201,10 @@ export default function ChapterReaderClient() {
           to { transform: rotate(360deg); }
         }
 
-        @media (max-width: 900px) {
-          .reader-top-inner {
+        @media (max-width: 980px) {
+          .reader-top-shell {
             grid-template-columns: 1fr !important;
-            gap: 12px !important;
+            gap: 16px !important;
           }
 
           .reader-top-right {
@@ -217,6 +221,14 @@ export default function ChapterReaderClient() {
             max-width: 100% !important;
             width: 100%;
           }
+
+          .reader-top-brand {
+            width: 100%;
+          }
+
+          .reader-top-title {
+            width: 100%;
+          }
         }
       `}</style>
 
@@ -228,13 +240,16 @@ export default function ChapterReaderClient() {
 
       {showTopBar && (
         <div style={S.topBar}>
-          <div className="reader-top-inner" style={S.topBarInner}>
-            <div style={S.topLeft}>
-              <span className="reader-link" onClick={() => router.push(`/manga/${id}`)} style={S.backLink}>
-                ← {manga?.title ?? "Quay lại"}
-              </span>
+          <div className="reader-top-shell" style={S.topBarShell}>
+            <div className="reader-top-brand" style={S.topBrandBlock}>
+              <div onClick={() => router.push("/")} style={S.brandWrap}>
+                <img src="/logo.png" alt="MAINGA" style={S.brandLogo} />
+                <div style={S.brandText}>
+                  M<span style={{ color: "#c9a84c" }}>AI</span>NGA
+                </div>
+              </div>
 
-              <div style={S.chapterInfo}>
+              <div className="reader-top-title" style={S.chapterInfo}>
                 <div style={S.chapterEyebrow}>CHAPTER {chapter.chapterNum}</div>
                 <h1 style={S.chapterTitle}>{chapter.title || `Chapter ${chapter.chapterNum}`}</h1>
               </div>
@@ -243,14 +258,30 @@ export default function ChapterReaderClient() {
             <div className="reader-top-right" style={S.topRight}>
               <button
                 className="reader-btn"
+                onClick={() => router.push("/")}
+                style={S.headerHomeBtn}
+              >
+                Trang Chủ
+              </button>
+
+              <button
+                className="reader-btn"
+                onClick={() => router.push(`/manga/${id}`)}
+                style={S.headerBackBtn}
+              >
+                Danh Sách Truyện
+              </button>
+
+              <button
+                className="reader-btn"
                 onClick={() => setReadMode((m) => (m === "scroll" ? "page" : "scroll"))}
                 style={S.modeBtn}
               >
-                {readMode === "scroll" ? "📄 Chế độ trang" : "📜 Chế độ cuộn"}
+                {readMode === "scroll" ? "Chế độ Trang" : "Chế độ Cuộn"}
               </button>
 
               <button className="reader-btn" onClick={() => setShowTopBar(false)} style={S.ghostBtn}>
-                Ẩn thanh
+                Ẩn Menu
               </button>
             </div>
           </div>
@@ -305,7 +336,7 @@ export default function ChapterReaderClient() {
                   cursor: currentPage === 0 ? "default" : "pointer",
                 }}
               >
-                ← Trang trước
+                Trang trước
               </button>
 
               <div style={S.pageCount}>
@@ -322,7 +353,7 @@ export default function ChapterReaderClient() {
                   cursor: currentPage === pageCount - 1 ? "default" : "pointer",
                 }}
               >
-                Trang sau →
+                Trang sau
               </button>
             </div>
 
@@ -343,7 +374,7 @@ export default function ChapterReaderClient() {
               cursor: prevChapter ? "pointer" : "default",
             }}
           >
-            ← Chapter trước
+            Chapter trước
           </button>
 
           {sortedChaptersAsc.length > 0 && (
@@ -371,7 +402,7 @@ export default function ChapterReaderClient() {
               cursor: nextChapter ? "pointer" : "default",
             }}
           >
-            Chapter sau →
+            Chapter sau
           </button>
         </div>
       </div>
@@ -443,50 +474,81 @@ const S: Record<string, CSSProperties> = {
     fontSize: 18,
     color: "#c9a84c",
   },
-  backBtn: {
-    padding: "10px 20px",
-    background: "rgba(201,168,76,0.12)",
-    border: "1px solid rgba(201,168,76,0.24)",
-    borderRadius: 10,
-    color: "#c9a84c",
+  errorActionRow: {
+    display: "flex",
+    gap: 12,
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  luxuryGhostBtn: {
+    padding: "11px 18px",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 12,
+    color: "#f0e6d0",
     cursor: "pointer",
     fontFamily: "'Inter',sans-serif",
     fontSize: 13,
+    fontWeight: 600,
+    boxShadow: "0 12px 30px rgba(0,0,0,0.20)",
+  },
+  luxuryGoldBtn: {
+    padding: "11px 18px",
+    background: "linear-gradient(135deg,#d7b75a,#8b6914)",
+    border: "1px solid rgba(201,168,76,0.28)",
+    borderRadius: 12,
+    color: "#080808",
+    cursor: "pointer",
+    fontFamily: "'Inter',sans-serif",
+    fontSize: 13,
+    fontWeight: 700,
+    boxShadow: "0 12px 30px rgba(0,0,0,0.22)",
   },
 
   topBar: {
     position: "sticky",
     top: 0,
     zIndex: 30,
-    background: "rgba(8,8,10,0.84)",
+    background: "rgba(8,8,10,0.88)",
     borderBottom: "1px solid rgba(201,168,76,0.10)",
     backdropFilter: "blur(16px)",
   },
-  topBarInner: {
-    maxWidth: 1180,
+  topBarShell: {
+    maxWidth: 1320,
     margin: "0 auto",
-    padding: "16px 24px 14px",
+    padding: "18px 24px",
     display: "grid",
     gridTemplateColumns: "1fr auto",
     alignItems: "center",
-    gap: 18,
+    gap: 20,
   },
-  topLeft: {
-    minWidth: 0,
-  },
-  topRight: {
+  topBrandBlock: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 10,
+    gap: 24,
+    minWidth: 0,
   },
-  backLink: {
-    display: "inline-block",
-    fontSize: 13,
-    color: "rgba(240,230,208,0.56)",
+  brandWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
     cursor: "pointer",
-    marginBottom: 10,
-    transition: "color 0.2s",
+    flexShrink: 0,
+  },
+  brandLogo: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    objectFit: "contain",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.24)",
+  },
+  brandText: {
+    fontFamily: "'Cinzel',serif",
+    fontWeight: 700,
+    fontSize: 18,
+    letterSpacing: "0.1em",
+    color: "#f0e6d0",
+    whiteSpace: "nowrap",
   },
   chapterInfo: {
     minWidth: 0,
@@ -505,23 +567,51 @@ const S: Record<string, CSSProperties> = {
     color: "#f0e6d0",
     lineHeight: 1.2,
   },
+  topRight: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  headerHomeBtn: {
+    padding: "11px 18px",
+    borderRadius: 999,
+    border: "1px solid rgba(201,168,76,0.24)",
+    background: "linear-gradient(135deg, rgba(201,168,76,0.12), rgba(139,105,20,0.10))",
+    color: "#e8d18a",
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: "0.02em",
+    boxShadow: "0 10px 28px rgba(0,0,0,0.20)",
+  },
+  headerBackBtn: {
+    padding: "11px 18px",
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.05)",
+    color: "#f0e6d0",
+    fontSize: 13,
+    fontWeight: 600,
+    boxShadow: "0 10px 28px rgba(0,0,0,0.18)",
+  },
   modeBtn: {
-    padding: "10px 14px",
+    padding: "11px 18px",
     background: "rgba(255,255,255,0.05)",
     border: "1px solid rgba(255,255,255,0.10)",
-    borderRadius: 10,
+    borderRadius: 14,
     color: "#f0e6d0",
     fontSize: 13,
     fontWeight: 600,
   },
   ghostBtn: {
-    padding: "10px 14px",
+    padding: "11px 18px",
     background: "rgba(201,168,76,0.10)",
     border: "1px solid rgba(201,168,76,0.18)",
-    borderRadius: 10,
+    borderRadius: 14,
     color: "#c9a84c",
     fontSize: 13,
-    fontWeight: 600,
+    fontWeight: 700,
   },
   progressWrap: {
     height: 3,

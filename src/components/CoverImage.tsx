@@ -49,7 +49,7 @@ export default function CoverImage({
             objectPosition: `${positionX}% ${positionY}%`,
             display: "block",
             userSelect: "none",
-            WebkitUserDrag: "none" as any,
+            ...( { WebkitUserDrag: "none" } as any ),
           }}
         />
       ) : (

@@ -440,7 +440,7 @@ function HotMangaCarousel({
           >
             {carouselMangas.map((manga, index) => (
               <div
-                key={`${manga.id}-${index}`}
+                key={`${manga.id}-${Math.floor(index / displayMangas.length)}-${index % displayMangas.length}`}
                 className="manga-card"
                 onMouseEnter={() => setHoveredManga(`${manga.id}-${index}`)}
                 onMouseLeave={() => setHoveredManga(null)}
@@ -700,11 +700,11 @@ export default function HomePage() {
     () =>
       [...mangas]
         .filter((m) => m.coverImage)
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt ?? 0).getTime() -
-            new Date(a.createdAt ?? 0).getTime()
-        )
+        .sort((a, b) => {
+          const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return tB - tA;
+        })
         .slice(0, 6),
     [mangas]
   );
@@ -756,8 +756,7 @@ export default function HomePage() {
       setAuthLoading(false);
     }
   };
-
-  return (
+    return (
     <div
       style={{
         minHeight: "100vh",
@@ -1562,7 +1561,7 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <>
+                    <>
             <HotMangaCarousel
               mangas={hotMangas}
               router={router}
@@ -1577,6 +1576,18 @@ export default function HomePage() {
               hoveredManga={hoveredManga}
               setHoveredManga={setHoveredManga}
             />
+
+            {hotMangas.length === 0 &&
+              latestMangas.length === 0 &&
+              mangas.length > 0 && (
+                <MangaSection
+                  title="Tất cả Manga"
+                  mangas={mangas}
+                  router={router}
+                  hoveredManga={hoveredManga}
+                  setHoveredManga={setHoveredManga}
+                />
+              )}
           </>
         )}
       </div>

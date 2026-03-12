@@ -1,87 +1,197 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-type MangaListItem = {
-  ratings: { score: number }[];
-} & Record<string, any>;
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const genre = searchParams.get("genre");
-  const search = searchParams.get("q");
-  const page = parseInt(searchParams.get("page") || "1", 10);
-  const limit = parseInt(searchParams.get("limit") || "20", 10);
+  try {
+    const { searchParams } = new URL(req.url);
 
-  const where: any = {};
+    const q = searchParams.get("q")?.trim() || "";
+    const genre = searchParams.get("genre")?.trim() || "";
+    const mine = searchParams.get("mine") === "true";
+    const page = Number(searchParams.get("page") || "1");
+    const limit = Number(searchParams.get("limit") || "12");
 
-  if (genre) {
-    where.genre = { has: genre };
+    const session = await getServerSession(authOptions);
+
+    const where: any = {};
+
+    if (q) {
+      where.OR = [
+        { title: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    if (genre && genre !== "Tất cả") {
+      where.genre = {
+        has: genre,
+      };
+    }
+
+    if (mine) {
+      if (!session?.user) {
+        return NextResponse.json({ mangas: [], total: 0 });
+      }
+
+      where.authorId = (session.user as any).id;
+    }
+
+    const [mangas, total] = await Promise.all([
+      prisma.manga.findMany({
+        where,
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+          _count: {
+            select: {
+              chapters: true,
+              comments: true,
+              follows: true,
+              ratings: true,
+            },
+          },
+          ratings: {
+            select: {
+              score: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.manga.count({ where }),
+    ]);
+
+    const result = mangas.map((m) => {
+      const avgRating =
+        m.ratings.length > 0
+          ? m.ratings.reduce((sum, r) => sum + r.score, 0) / m.ratings.length
+          : 0;
+
+      return {
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        coverImage: m.coverImage,
+        coverPositionX: m.coverPositionX ?? 50,
+        coverPositionY: m.coverPositionY ?? 50,
+        genre: m.genre,
+        status: m.status,
+        views: m.views,
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
+        authorId: m.authorId,
+        author: m.author,
+        _count: m._count,
+        avgRating,
+        ratingCount: m.ratings.length,
+      };
+    });
+
+    return NextResponse.json({
+      mangas: result,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.error("GET /api/manga error:", error);
+    return NextResponse.json(
+      { error: "Lỗi tải danh sách manga" },
+      { status: 500 }
+    );
   }
-
-  if (search) {
-    where.OR = [
-      { title: { contains: search, mode: "insensitive" } },
-      { author: { name: { contains: search, mode: "insensitive" } } },
-    ];
-  }
-
-  const [mangas, total] = await Promise.all([
-    prisma.manga.findMany({
-      where,
-      include: {
-        author: { select: { id: true, name: true, image: true } },
-        _count: { select: { chapters: true, comments: true } },
-        ratings: { select: { score: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.manga.count({ where }),
-  ]);
-
-  const result = mangas.map((m: MangaListItem) => ({
-    ...m,
-    avgRating:
-      m.ratings.length > 0
-        ? m.ratings.reduce(
-            (a: number, b: { score: number }) => a + b.score,
-            0
-          ) / m.ratings.length
-        : 0,
-    ratingCount: m.ratings.length,
-    ratings: undefined,
-  }));
-
-  return NextResponse.json({ mangas: result, total, page, limit });
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  try {
+    const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
-    return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
-  }
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Chưa đăng nhập" },
+        { status: 401 }
+      );
+    }
 
-  const { title, description, coverImage, genre, status } = await req.json();
+    const userId = (session.user as any).id;
+    const userRole = (session.user as any).role;
 
-  if (!title) {
-    return NextResponse.json({ error: "Thiếu tên manga" }, { status: 400 });
-  }
+    if (userRole !== "author" && userRole !== "admin") {
+      return NextResponse.json(
+        { error: "Bạn không có quyền đăng manga" },
+        { status: 403 }
+      );
+    }
 
-  const manga = await prisma.manga.create({
-    data: {
+    const body = await req.json();
+
+    const {
       title,
       description,
       coverImage,
-      genre: genre || [],
-      status: status || "ongoing",
-      authorId: (session.user as any).id,
-    },
-    include: { author: { select: { id: true, name: true } } },
-  });
+      coverPositionX,
+      coverPositionY,
+      genre,
+      status,
+    } = body;
 
-  return NextResponse.json(manga, { status: 201 });
+    if (!title || !String(title).trim()) {
+      return NextResponse.json(
+        { error: "Tên manga là bắt buộc" },
+        { status: 400 }
+      );
+    }
+
+    const created = await prisma.manga.create({
+      data: {
+        title: String(title).trim(),
+        description: description ? String(description).trim() : "",
+        coverImage: coverImage || null,
+        coverPositionX:
+          coverPositionX !== undefined ? Number(coverPositionX) : 50,
+        coverPositionY:
+          coverPositionY !== undefined ? Number(coverPositionY) : 50,
+        genre: Array.isArray(genre) ? genre : [],
+        status: status || "ongoing",
+        authorId: userId,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+        _count: {
+          select: {
+            chapters: true,
+            comments: true,
+            follows: true,
+            ratings: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(created, { status: 201 });
+  } catch (error) {
+    console.error("POST /api/manga error:", error);
+    return NextResponse.json(
+      { error: "Tạo manga thất bại" },
+      { status: 500 }
+    );
+  }
 }

@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
+import CoverImage from "@/components/CoverImage";
 
 type Manga = {
   id: string;
   title: string;
   description?: string;
   coverImage?: string;
+  coverPositionX?: number;
+  coverPositionY?: number;
   genre?: string[];
   status?: string;
   views?: number;
@@ -84,7 +87,13 @@ function MangaSection({
         />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 24 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))",
+          gap: 24,
+        }}
+      >
         {mangas.map((manga) => (
           <div
             key={manga.id}
@@ -98,34 +107,33 @@ function MangaSection({
                 position: "relative",
                 borderRadius: 10,
                 overflow: "hidden",
-                aspectRatio: "3/4",
                 background: "rgba(255,255,255,0.03)",
                 border: "1px solid rgba(201,168,76,0.1)",
                 marginBottom: 12,
               }}
             >
-              {manga.coverImage ? (
-                <img
-                  src={manga.coverImage}
-                  alt={manga.title}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 48,
-                  }}
-                >
-                  📖
-                </div>
-              )}
+              <CoverImage
+                src={manga.coverImage || "/logo.png"}
+                alt={manga.title}
+                positionX={manga.coverPositionX ?? 50}
+                positionY={manga.coverPositionY ?? 50}
+                aspectRatio="3 / 4"
+                borderRadius={10}
+              />
 
-              <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <div
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  bottom: 10,
+                  display: "flex",
+                  gap: 6,
+                  flexWrap: "wrap",
+                  justifyContent: "flex-end",
+                  zIndex: 2,
+                  maxWidth: "80%",
+                }}
+              >
                 {(manga.views ?? 0) >= 20 && (
                   <span
                     style={{
@@ -144,7 +152,8 @@ function MangaSection({
                 )}
 
                 {manga.coverImage &&
-                  new Date(manga.createdAt ?? 0).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && (
+                  new Date(manga.createdAt ?? 0).getTime() >
+                    Date.now() - 7 * 24 * 60 * 60 * 1000 && (
                     <span
                       style={{
                         padding: "4px 8px",
@@ -156,6 +165,7 @@ function MangaSection({
                         fontSize: 10,
                         fontWeight: 700,
                         letterSpacing: "0.08em",
+                        backdropFilter: "blur(6px)",
                       }}
                     >
                       NEW
@@ -167,11 +177,13 @@ function MangaSection({
                     style={{
                       padding: "4px 8px",
                       borderRadius: 999,
-                      background: "rgba(8,8,8,0.7)",
-                      border: "1px solid rgba(201,168,76,0.2)",
+                      background: "rgba(8,8,8,0.78)",
+                      border: "1px solid rgba(201,168,76,0.22)",
                       color: "#f0e6d0",
                       fontFamily: "'Inter',sans-serif",
                       fontSize: 10,
+                      fontWeight: 600,
+                      backdropFilter: "blur(6px)",
                     }}
                   >
                     {manga.genre[0]}
@@ -189,6 +201,7 @@ function MangaSection({
                     alignItems: "center",
                     justifyContent: "center",
                     backdropFilter: "blur(2px)",
+                    zIndex: 3,
                   }}
                 >
                   <div
@@ -256,24 +269,30 @@ function HotMangaCarousel({
   setHoveredManga: (id: string | null) => void;
 }) {
   const displayMangas = mangas.slice(0, 10);
-  const carouselMangas = displayMangas.length > 0 ? [...displayMangas, ...displayMangas] : [];
+  const hasCarousel = displayMangas.length > 1;
+  const carouselMangas = hasCarousel ? [...displayMangas, ...displayMangas] : displayMangas;
 
   const [trackIndex, setTrackIndex] = useState(0);
   const [withTransition, setWithTransition] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    if (displayMangas.length <= 1 || isPaused) return;
+    setTrackIndex(0);
+    setWithTransition(true);
+  }, [displayMangas.length]);
+
+  useEffect(() => {
+    if (!hasCarousel || isPaused) return;
 
     const timer = setInterval(() => {
       setTrackIndex((prev) => prev + 1);
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [displayMangas.length, isPaused]);
+  }, [hasCarousel, isPaused]);
 
   useEffect(() => {
-    if (displayMangas.length === 0) return;
+    if (!hasCarousel) return;
     if (trackIndex < displayMangas.length) return;
 
     const resetTimer = setTimeout(() => {
@@ -289,20 +308,20 @@ function HotMangaCarousel({
       clearTimeout(resetTimer);
       clearTimeout(restoreTimer);
     };
-  }, [trackIndex, displayMangas.length]);
+  }, [trackIndex, displayMangas.length, hasCarousel]);
 
   const cardWidth = 220;
   const gap = 24;
-  const translateX = trackIndex * (cardWidth + gap);
+  const translateX = hasCarousel ? trackIndex * (cardWidth + gap) : 0;
   const activeIndex = displayMangas.length > 0 ? trackIndex % displayMangas.length : 0;
 
   const goNext = () => {
-    if (displayMangas.length <= 1) return;
+    if (!hasCarousel) return;
     setTrackIndex((prev) => prev + 1);
   };
 
   const goPrev = () => {
-    if (displayMangas.length <= 1) return;
+    if (!hasCarousel) return;
     setWithTransition(false);
     setTrackIndex((prev) => {
       const next = prev <= 0 ? displayMangas.length - 1 : prev - 1;
@@ -312,6 +331,7 @@ function HotMangaCarousel({
   };
 
   const goToIndex = (index: number) => {
+    if (!hasCarousel) return;
     setTrackIndex(index);
   };
 
@@ -350,7 +370,7 @@ function HotMangaCarousel({
         onMouseLeave={() => setIsPaused(false)}
         style={{ position: "relative", marginBottom: 14 }}
       >
-        {displayMangas.length > 1 && (
+        {hasCarousel && (
           <>
             <button
               className="hot-nav-btn"
@@ -432,19 +452,33 @@ function HotMangaCarousel({
                     position: "relative",
                     borderRadius: 10,
                     overflow: "hidden",
-                    aspectRatio: "3/4",
                     background: "rgba(255,255,255,0.03)",
                     border: "1px solid rgba(201,168,76,0.1)",
                     marginBottom: 12,
                   }}
                 >
-                  <img
+                  <CoverImage
                     src={manga.coverImage || "/logo.png"}
                     alt={manga.title}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    positionX={manga.coverPositionX ?? 50}
+                    positionY={manga.coverPositionY ?? 50}
+                    aspectRatio="3 / 4"
+                    borderRadius={10}
                   />
 
-                  <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: 10,
+                      bottom: 10,
+                      display: "flex",
+                      gap: 6,
+                      flexWrap: "wrap",
+                      justifyContent: "flex-end",
+                      zIndex: 2,
+                      maxWidth: "80%",
+                    }}
+                  >
                     <span
                       style={{
                         padding: "4px 8px",
@@ -465,11 +499,13 @@ function HotMangaCarousel({
                         style={{
                           padding: "4px 8px",
                           borderRadius: 999,
-                          background: "rgba(8,8,8,0.7)",
-                          border: "1px solid rgba(201,168,76,0.2)",
+                          background: "rgba(8,8,8,0.78)",
+                          border: "1px solid rgba(201,168,76,0.22)",
                           color: "#f0e6d0",
                           fontFamily: "'Inter',sans-serif",
                           fontSize: 10,
+                          fontWeight: 600,
+                          backdropFilter: "blur(6px)",
                         }}
                       >
                         {manga.genre[0]}
@@ -487,6 +523,7 @@ function HotMangaCarousel({
                         alignItems: "center",
                         justifyContent: "center",
                         backdropFilter: "blur(2px)",
+                        zIndex: 3,
                       }}
                     >
                       <div
@@ -541,7 +578,7 @@ function HotMangaCarousel({
         </div>
       </div>
 
-      {displayMangas.length > 1 && (
+      {hasCarousel && (
         <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
           {displayMangas.map((_, index) => (
             <button
@@ -910,7 +947,6 @@ export default function HomePage() {
         }
       `}</style>
 
-      {/* AMBIENT */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
         <div
           style={{
@@ -1008,7 +1044,6 @@ export default function HomePage() {
         />
       </div>
 
-      {/* NAVBAR */}
       <nav
         style={{
           position: "sticky",
@@ -1291,7 +1326,6 @@ export default function HomePage() {
         </button>
       </nav>
 
-      {/* MOBILE DROPDOWN */}
       {menuOpen && (
         <div
           className="mobile-menu-dropdown"
@@ -1366,7 +1400,6 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* HERO */}
       <div
         style={{
           position: "relative",
@@ -1477,10 +1510,25 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* MANGA LIST */}
-      <div id="manga-list" style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "0 40px" }}>
+      <div
+        id="manga-list"
+        style={{
+          position: "relative",
+          zIndex: 1,
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "0 40px",
+        }}
+      >
         {mangasLoading ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 24, marginBottom: 80 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))",
+              gap: 24,
+              marginBottom: 80,
+            }}
+          >
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i}>
                 <div className="skeleton" style={{ aspectRatio: "3/4", borderRadius: 10, marginBottom: 12 }} />
@@ -1533,7 +1581,6 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* FOOTER STATS */}
       <div style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "24px 40px 60px" }}>
         <div
           style={{
@@ -1578,7 +1625,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* AUTH MODAL */}
       {showAuth && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowAuth(false)}>
           <div

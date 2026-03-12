@@ -1,22 +1,49 @@
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --background: #080808;
-  --foreground: #f0e6d0;
+  --bg: #080808;
+  --fg: #f0e6d0;
   --gold: #c9a84c;
   --gold-dark: #8b6914;
+
+  --font-ui: "Inter", sans-serif;
+  --font-brand: "Cinzel", serif;
+  --font-display: "Cormorant Garamond", serif;
 }
 
-html, body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: 'Inter', sans-serif;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-ui);
+}
+
+img {
+  max-width: 100%;
+  display: block;
 }
 
 a {
@@ -24,24 +51,73 @@ a {
   text-decoration: none;
 }
 
+/* Title tiếng Việt / text dài: luôn ưu tiên Inter cho dễ đọc */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div,
+label,
+small,
+strong,
+em,
+li,
+td,
+th,
+input,
+textarea,
+select,
 button {
-  font-family: inherit;
+  font-kerning: normal;
 }
 
+/* Class dùng có chủ đích */
+.font-brand {
+  font-family: var(--font-brand) !important;
+}
+
+.font-display {
+  font-family: var(--font-display) !important;
+}
+
+.font-ui {
+  font-family: var(--font-ui) !important;
+}
+
+/* Dùng cho title manga/chapter/card để tránh lỗi font xấu */
+.vn-title,
+.manga-title,
+.chapter-title,
+.card-title {
+  font-family: var(--font-ui) !important;
+  font-weight: 700;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  line-height: 1.35;
+}
+
+/* Logo / heading trang trí mới nên dùng Cinzel */
+.brand-title,
+.section-title,
+.decorative-title {
+  font-family: var(--font-brand) !important;
+}
+
+/* Scrollbar nhẹ */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-}
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(201, 168, 76, 0.2);
-  border-radius: 3px;
+  background: linear-gradient(var(--gold), var(--gold-dark));
+  border-radius: 999px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(201, 168, 76, 0.4);
+::-webkit-scrollbar-track {
+  background: transparent;
 }

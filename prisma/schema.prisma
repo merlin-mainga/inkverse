@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -29,22 +30,24 @@ model User {
 }
 
 model Manga {
-  id          String        @id @default(cuid())
-  title       String
-  description String?
-  coverImage  String?
-  genre       String[]
-  status      String        @default("ongoing")
-  views       Int           @default(0)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  authorId    String
-  author      User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  chapters    Chapter[]
-  comments    Comment[]
-  follows     Follow[]
-  ratings     Rating[]
-  readHistory ReadHistory[]
+  id             String        @id @default(cuid())
+  title          String
+  description    String?
+  coverImage     String?
+  coverPositionX Int           @default(50)
+  coverPositionY Int           @default(50)
+  genre          String[]
+  status         String        @default("ongoing")
+  views          Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  authorId       String
+  author         User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  chapters       Chapter[]
+  comments       Comment[]
+  follows        Follow[]
+  ratings        Rating[]
+  readHistory    ReadHistory[]
 }
 
 model Chapter {

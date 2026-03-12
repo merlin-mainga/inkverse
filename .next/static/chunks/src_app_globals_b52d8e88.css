@@ -1,0 +1,87 @@
+/* [project]/src/app/globals.css [app-client] (css) */
+:root {
+  --bg: #080808;
+  --fg: #f0e6d0;
+  --gold: #c9a84c;
+  --gold-dark: #8b6914;
+  --font-ui: "Inter", sans-serif;
+  --font-brand: "Cinzel", serif;
+  --font-display: "Cormorant Garamond", serif;
+}
+
+*, :before, :after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body, button, input, textarea, select {
+  font-family: var(--font-ui);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1, h2, h3, h4, h5, h6, p, span, div, label, small, strong, em, li, td, th, input, textarea, select, button {
+  font-kerning: normal;
+}
+
+.font-brand {
+  font-family: var(--font-brand) !important;
+}
+
+.font-display {
+  font-family: var(--font-display) !important;
+}
+
+.font-ui {
+  font-family: var(--font-ui) !important;
+}
+
+.vn-title, .manga-title, .chapter-title, .card-title {
+  font-weight: 700;
+  line-height: 1.35;
+  font-family: var(--font-ui) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.brand-title, .section-title, .decorative-title {
+  font-family: var(--font-brand) !important;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--gold), var(--gold-dark));
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-track {
+  background: none;
+}
+
+/*# sourceMappingURL=src_app_globals_b52d8e88.css.map*/

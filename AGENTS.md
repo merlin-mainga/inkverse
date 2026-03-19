@@ -46,8 +46,9 @@
 
 | Date | Issue | Fix |
 |------|-------|-----|
-| 2026-03-19 | Homepage 0 manga/users/views - Stats API silent failure returning 200 OK with 0s on DB error | Added retry logic (2 attempts, exponential backoff) + 503 on persistent failure |
+| 2026-03-19 | Homepage 0 manga/users/views - Stats API silent failure returning 200 OK with 0s on DB error | Added retry logic (3 attempts, exponential backoff 800ms) + 503 on persistent failure |
 | 2026-03-19 | `Module not found: lucide-react` - Dev Engineer thêm import nhưng quên chạy `npm install` | Run `npm install` + commit package.json |
+| 2026-03-19 | Production stats still showing 0 after fix - Vercel cold start not handled | Increased retry from 2→3, delay 500ms→800ms |
 
 ## Error Handling Patterns (CRITICAL)
 

@@ -1,33 +1,45 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, ImageIcon, Shield, Layers, Wand2, Check } from "lucide-react";
+import { Sparkles, Wand2, Shield, Zap, Crown, Check } from "lucide-react";
 
 interface PricingTier {
   name: string;
+  tagline: string;
   monthlyUsd: string;
   yearlyUsd: string;
   monthlyVnd: string;
   yearlyVnd: string;
   features: string[];
+  cta: string;
   popular?: boolean;
+  exclusive?: boolean;
   mana: number;
   hasMaingaLab?: boolean;
+  maxCharacters?: number;
   isYearlyDiscount?: boolean;
 }
 
 const pricingTiers: PricingTier[] = [
   {
     name: "Starter",
+    tagline: "Bắt đầu câu chuyện của chính bạn — không cần vẽ giỏi.",
     monthlyUsd: "$1.99",
     yearlyUsd: "$1.59",
     monthlyVnd: "~49,000đ",
     yearlyVnd: "~39,000đ",
     mana: 100,
-    features: ["100 Mana/tháng", "Không giới hạn generate cơ bản"],
+    cta: "Bắt đầu thử nghiệm →",
+    features: [
+      "100 Mana/tháng",
+      "Tạo ảnh manga cơ bản bằng AI",
+      "Không cần kỹ năng vẽ",
+      "Thử trước, upgrade sau",
+    ],
   },
   {
     name: "Pro",
+    tagline: "Từ 'thử chơi' sang thật sự là creator — đây là bước ngoặt.",
     monthlyUsd: "$4.99",
     yearlyUsd: "$3.99",
     monthlyVnd: "~129,000đ",
@@ -35,37 +47,42 @@ const pricingTiers: PricingTier[] = [
     mana: 300,
     popular: true,
     hasMaingaLab: true,
+    maxCharacters: 5,
+    cta: "Trở thành creator ngay →",
     isYearlyDiscount: true,
     features: [
+      "Mainga Lab — Character AI consistent",
+      "Tối đa 5 nhân vật",
       "300 Mana/tháng",
-      "Mainga Lab - Tạo Character AI",
-      "Generate ảnh consistent",
-      "Bảo tồn đặc điểm nhân vật",
+      "Bước qua ranh giới 'vẽ được'",
     ],
   },
   {
     name: "Max",
+    tagline: "Cho những ai không chỉ thích đọc manga — mà muốn viết ra chúng.",
     monthlyUsd: "$9.99",
     yearlyUsd: "$7.99",
     monthlyVnd: "~259,000đ",
     yearlyVnd: "~199,000đ",
     mana: 800,
+    exclusive: true,
     hasMaingaLab: true,
+    cta: "Đi all-in với manga của bạn →",
     isYearlyDiscount: true,
     features: [
+      "Mainga Lab không giới hạn",
       "800 Mana/tháng",
-      "Tất cả tính năng Pro",
-      "Ưu tiên xử lý",
-      "Không giới hạn Mainga Lab",
+      "Priority processing",
+      "Exclusive AI models sắp ra",
     ],
   },
 ];
 
 const features = [
   { icon: Wand2, text: "Tạo Character AI từ mô tả" },
-  { icon: ImageIcon, text: "Upload ảnh làm ref nhân vật" },
-  { icon: Layers, text: "Generate consistent qua nhiều scene" },
+  { icon: Sparkles, text: "Upload ảnh làm ref nhân vật" },
   { icon: Shield, text: "Bảo tồn identity nhân vật" },
+  { icon: Zap, text: "Generate consistent qua nhiều scene" },
 ];
 
 export default function MaingaLabUpgradeBanner() {
@@ -77,7 +94,7 @@ export default function MaingaLabUpgradeBanner() {
         background: "linear-gradient(180deg, rgba(20,18,12,0.98), rgba(12,10,6,0.99))",
         borderRadius: 20,
         padding: "40px 32px",
-        maxWidth: 920,
+        maxWidth: 960,
         margin: "0 auto",
         border: "1px solid rgba(201,168,76,0.15)",
         boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(201,168,76,0.08)",
@@ -269,41 +286,118 @@ export default function MaingaLabUpgradeBanner() {
               padding: "24px 20px",
               position: "relative",
               overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            {tier.popular && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  right: -30,
-                  background: "linear-gradient(135deg, #c9a84c, #a08030)",
-                  color: "#0a0806",
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: "4px 44px",
-                  transform: "rotate(45deg)",
-                  fontFamily: "'Inter', sans-serif",
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                }}
-              >
-                POPULAR
-              </div>
-            )}
+            {/* Badges */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+              {tier.popular && (
+                <span
+                  style={{
+                    background: "linear-gradient(135deg, #c9a84c, #a08030)",
+                    color: "#0a0806",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    borderRadius: 4,
+                    fontFamily: "'Inter', sans-serif",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Phổ biến nhất
+                </span>
+              )}
+              {tier.exclusive && (
+                <span
+                  style={{
+                    background: "rgba(168,85,247,0.15)",
+                    color: "#c084fc",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    borderRadius: 4,
+                    fontFamily: "'Inter', sans-serif",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Crown size={10} strokeWidth={2} />
+                  Exclusive
+                </span>
+              )}
+            </div>
 
+            {/* Tier Name */}
             <div
               style={{
                 fontFamily: "'Cinzel', serif",
                 fontSize: 15,
                 fontWeight: 600,
                 color: tier.popular ? "#c9a84c" : "#f0e6d0",
-                marginBottom: 12,
+                marginBottom: 8,
                 letterSpacing: "0.04em",
               }}
             >
               {tier.name}
             </div>
+
+            {/* Tagline */}
+            <div
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 12,
+                color: "rgba(240,230,208,0.5)",
+                lineHeight: 1.5,
+                marginBottom: 16,
+                fontStyle: "italic",
+              }}
+            >
+              {tier.tagline}
+            </div>
+
+            {/* Mainga Lab Badge */}
+            {tier.hasMaingaLab && (
+              <div
+                style={{
+                  background: "rgba(201,168,76,0.1)",
+                  border: "1px solid rgba(201,168,76,0.2)",
+                  borderRadius: 6,
+                  padding: "8px 12px",
+                  marginBottom: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Sparkles size={14} color="#c9a84c" strokeWidth={1.5} />
+                <span
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: 12,
+                    color: "#c9a84c",
+                    fontWeight: 600,
+                  }}
+                >
+                  Mainga Lab
+                </span>
+                {tier.maxCharacters && (
+                  <span
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: 11,
+                      color: "rgba(240,230,208,0.5)",
+                    }}
+                  >
+                    • {tier.maxCharacters} nhân vật
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Price */}
             <div
@@ -353,6 +447,7 @@ export default function MaingaLabUpgradeBanner() {
               </span>
             </div>
 
+            {/* Yearly Discount */}
             {isYearly && tier.isYearlyDiscount && (
               <div
                 style={{
@@ -367,6 +462,7 @@ export default function MaingaLabUpgradeBanner() {
               </div>
             )}
 
+            {/* Mana */}
             <div
               style={{
                 fontFamily: "'Inter', sans-serif",
@@ -379,11 +475,13 @@ export default function MaingaLabUpgradeBanner() {
               {tier.mana} Mana
             </div>
 
+            {/* Features */}
             <ul
               style={{
                 margin: 0,
                 padding: 0,
                 listStyle: "none",
+                flex: 1,
               }}
             >
               {tier.features.map((feature, i) => (
@@ -413,46 +511,60 @@ export default function MaingaLabUpgradeBanner() {
                 </li>
               ))}
             </ul>
+
+            {/* CTA Button */}
+            <a
+              href="/pricing"
+              style={{
+                display: "block",
+                textAlign: "center",
+                padding: "12px 16px",
+                background: tier.popular
+                  ? "linear-gradient(135deg, #c9a84c, #a08030)"
+                  : "transparent",
+                border: tier.popular
+                  ? "none"
+                  : "1px solid rgba(201,168,76,0.3)",
+                borderRadius: 8,
+                color: tier.popular ? "#0a0806" : "#c9a84c",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 13,
+                fontWeight: 600,
+                textDecoration: "none",
+                letterSpacing: "0.02em",
+                marginTop: 16,
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (tier.popular) {
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                  e.currentTarget.style.boxShadow = "0 4px 16px rgba(201,168,76,0.3)";
+                } else {
+                  e.currentTarget.style.background = "rgba(201,168,76,0.1)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (tier.popular) {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "none";
+                } else {
+                  e.currentTarget.style.background = "transparent";
+                }
+              }}
+            >
+              {tier.cta}
+            </a>
           </div>
         ))}
       </div>
 
-      {/* CTA Button */}
+      {/* Footer */}
       <div style={{ textAlign: "center" }}>
-        <a
-          href="/pricing"
-          style={{
-            display: "inline-block",
-            padding: "14px 52px",
-            background: "linear-gradient(135deg, #c9a84c, #a08030)",
-            borderRadius: 8,
-            color: "#0a0806",
-            fontFamily: "'Inter', sans-serif",
-            fontSize: 14,
-            fontWeight: 600,
-            textDecoration: "none",
-            letterSpacing: "0.03em",
-            boxShadow: "0 4px 16px rgba(201,168,76,0.25)",
-            transition: "all 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-2px)";
-            e.currentTarget.style.boxShadow = "0 6px 24px rgba(201,168,76,0.35)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 4px 16px rgba(201,168,76,0.25)";
-          }}
-        >
-          Nâng cấp ngay
-        </a>
-
         <p
           style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: 11,
             color: "rgba(240,230,208,0.35)",
-            marginTop: 14,
             letterSpacing: "0.02em",
           }}
         >

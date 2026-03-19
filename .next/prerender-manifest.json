@@ -54,7 +54,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/login": {
+    "/become-author": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -67,32 +67,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/login",
-      "dataRoute": "/login.rsc",
-      "allowHeader": [
-        "host",
-        "x-matched-path",
-        "x-prerender-revalidate",
-        "x-prerender-revalidate-if-generated",
-        "x-next-revalidated-tags",
-        "x-next-revalidate-tag-token"
-      ]
-    },
-    "/": {
-      "experimentalBypassFor": [
-        {
-          "type": "header",
-          "key": "Next-Action"
-        },
-        {
-          "type": "header",
-          "key": "content-type",
-          "value": "multipart/form-data;.*"
-        }
-      ],
-      "initialRevalidateSeconds": false,
-      "srcRoute": "/",
-      "dataRoute": "/index.rsc",
+      "srcRoute": "/become-author",
+      "dataRoute": "/become-author.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -126,7 +102,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/become-author": {
+    "/": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -139,8 +115,32 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/become-author",
-      "dataRoute": "/become-author.rsc",
+      "srcRoute": "/",
+      "dataRoute": "/index.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/login": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "Next-Action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/login",
+      "dataRoute": "/login.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -178,8 +178,8 @@
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "4ad5479f1a0ddfcbeda49da1cc2accf7",
-    "previewModeSigningKey": "335f6479f4d8f5f5d12f683e8c95f24835525aa6b4a11c62137cb8868d919599",
-    "previewModeEncryptionKey": "46dc58ed1067a423873e5ff09f382ad1738b46ef285e3c0a92c36ab5c7061abc"
+    "previewModeId": "02e37e03ebbd04e03869e22e1c93b0eb",
+    "previewModeSigningKey": "81236ffc2baa1ba22b09b7b36b63569e1af3e65e1dffbee34e064f17cffbb446",
+    "previewModeEncryptionKey": "dfc00a5f1553868b336974d8043e8dc346bcc84cb0e332cf2a3632045f8eff1c"
   }
 }

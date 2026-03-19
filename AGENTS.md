@@ -46,7 +46,28 @@
 
 | Date | Issue | Fix |
 |------|-------|-----|
+| 2026-03-19 | Homepage 0 manga/users/views - Stats API silent failure returning 200 OK with 0s on DB error | Added retry logic (2 attempts, exponential backoff) + 503 on persistent failure |
 | 2026-03-19 | `Module not found: lucide-react` - Dev Engineer thêm import nhưng quên chạy `npm install` | Run `npm install` + commit package.json |
+
+## Error Handling Patterns (CRITICAL)
+
+### NEVER do this in API routes:
+```typescript
+// ❌ BAD: Returns 200 OK when DB fails, client thinks data is valid
+catch (error) {
+  return NextResponse.json({ data: null }, { status: 200 });
+}
+```
+
+### DO this instead:
+```typescript
+// ✅ GOOD: Return proper error status + retry logic for transient failures
+catch (error) {
+  // For public endpoints, add retry for cold start issues
+  // Return 503 so client knows to retry
+  return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+}
+```
 
 ## Deployment Pipeline
 

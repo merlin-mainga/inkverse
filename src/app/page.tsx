@@ -725,7 +725,6 @@ export default function HomePage() {
   const latestMangas = useMemo(
     () =>
       [...mangas]
-        .filter((m) => m.coverImage)
         .sort((a, b) => {
           const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;

@@ -112,11 +112,7 @@ export async function POST(req: Request) {
 
     const created = await prisma.characterProfile.create({
       data: {
-        user: {
-          connect: {
-            email: session.user.email,
-          },
-        },
+        userId: userId,
         name: canon.name,
         sourceType: canon.sourceType,
         primaryImageUrl: canon.primaryImageUrl,

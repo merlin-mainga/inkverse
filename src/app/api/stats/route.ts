@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 // Retry helper for DB connection issues (cold start, connection pool)
-async function fetchStatsWithRetry(retries = 2, delayMs = 500): Promise<{
+// Increased retries for Vercel serverless cold start issues
+async function fetchStatsWithRetry(retries = 3, delayMs = 800): Promise<{
   mangaCount: number;
   userCount: number;
   totalViews: number;
@@ -28,7 +29,7 @@ async function fetchStatsWithRetry(retries = 2, delayMs = 500): Promise<{
       };
     } catch (error) {
       lastError = error as Error;
-      console.error(`GET /api/stats attempt ${i + 1} failed:`, error);
+      console.error(`GET /api/stats attempt ${i + 1}/${retries + 1} failed:`, error);
 
       if (i < retries) {
         // Wait before retry (exponential backoff for cold start)

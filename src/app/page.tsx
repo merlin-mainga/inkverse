@@ -669,6 +669,22 @@ export default function HomePage() {
     setStatsLoading(true);
     try {
       const res = await fetch("/api/stats", { cache: "no-store" });
+
+      // 503 = DB temporarily unavailable, trigger retry
+      if (res.status === 503) {
+        console.log("Stats API 503, retrying...");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const retryRes = await fetch("/api/stats", { cache: "no-store" });
+        if (!retryRes.ok) throw new Error(`stats retry ${retryRes.status}`);
+        const retryData = await retryRes.json();
+        setStats({
+          mangaCount: retryData.mangaCount ?? 0,
+          userCount: retryData.userCount ?? 0,
+          totalViews: retryData.totalViews ?? 0,
+        });
+        return;
+      }
+
       if (!res.ok) throw new Error(`stats ${res.status}`);
 
       const data = await res.json();
@@ -679,6 +695,7 @@ export default function HomePage() {
       });
     } catch (error) {
       console.error("Stats error:", error);
+      // Don't silently set to 0 - keep previous state or show loading
       setStats({
         mangaCount: 0,
         userCount: 0,

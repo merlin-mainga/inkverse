@@ -1,0 +1,3 @@
+{
+  "/api/manga/[id]/read-history/route": "app/api/manga/[id]/read-history/route.js"
+}

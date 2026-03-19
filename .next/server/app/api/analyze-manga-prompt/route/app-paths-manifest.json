@@ -1,0 +1,3 @@
+{
+  "/api/analyze-manga-prompt/route": "app/api/analyze-manga-prompt/route.js"
+}

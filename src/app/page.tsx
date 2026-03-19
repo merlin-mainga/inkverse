@@ -634,6 +634,15 @@ export default function HomePage() {
   });
 
   const isLoggedIn = status === "authenticated";
+  const handleOpenMangaAI = () => {
+  if (isLoggedIn) {
+    router.push("/dashboard");
+    return;
+  }
+
+  setAuthMode("login");
+  setShowAuth(true);
+};
 
   const fetchMangas = useCallback(async () => {
     setMangasLoading(true);
@@ -1226,20 +1235,40 @@ export default function HomePage() {
             )}
           </div>
 
-          <button
-            className="gold-btn"
-            onClick={() => (isLoggedIn ? router.push("/dashboard") : setShowAuth(true))}
-            style={{
-              padding: "9px 20px",
-              borderRadius: 6,
-              color: "#080808",
-              fontFamily: "'Inter',sans-serif",
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            ✦ Đăng Manga
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+  <button
+    className="gold-btn"
+    onClick={() => (isLoggedIn ? router.push("/dashboard") : setShowAuth(true))}
+    style={{
+      padding: "9px 20px",
+      borderRadius: 6,
+      color: "#080808",
+      fontFamily: "'Inter',sans-serif",
+      fontSize: 13,
+      fontWeight: 600,
+    }}
+  >
+    ✦ Đăng Manga
+  </button>
+
+  <button
+    onClick={handleOpenMangaAI}
+    style={{
+      padding: "9px 18px",
+      borderRadius: 6,
+      background: "rgba(255,255,255,0.03)",
+      border: "1px solid rgba(201,168,76,0.22)",
+      color: "#c9a84c",
+      fontFamily: "'Inter',sans-serif",
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    }}
+  >
+    ✦ Tạo Manga
+  </button>
+</div>
 
           {isLoggedIn ? (
             <div

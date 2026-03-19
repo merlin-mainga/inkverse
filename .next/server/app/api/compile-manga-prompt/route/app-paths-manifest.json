@@ -1,0 +1,3 @@
+{
+  "/api/compile-manga-prompt/route": "app/api/compile-manga-prompt/route.js"
+}

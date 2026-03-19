@@ -1,0 +1,3 @@
+{
+  "/api/manga/[id]/comments/route": "app/api/manga/[id]/comments/route.js"
+}

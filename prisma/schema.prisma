@@ -27,6 +27,34 @@ model User {
   ratings          Rating[]
   readHistory      ReadHistory[]
   sessions         Session[]
+  characters CharacterProfile[]
+}
+
+model CharacterProfile {
+  id              String   @id @default(cuid())
+  userId          String
+
+  name            String
+  description     String?
+  sourceType      String
+
+  primaryImageUrl String
+  galleryJson     Json?
+
+  canonSummary    String
+  appearanceNotes String
+  mustPreserve    String
+  avoidDrift      String?
+
+  styleAffinity   String?
+  colorMode       String   @default("unspecified")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
 }
 
 model Manga {

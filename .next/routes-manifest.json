@@ -1,0 +1,184 @@
+{
+  "version": 3,
+  "pages404": true,
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "dynamicRoutes": [
+    {
+      "page": "/api/auth/[...nextauth]",
+      "regex": "^/api/auth/(.+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPnextauth": "nxtPnextauth"
+      },
+      "namedRegex": "^/api/auth/(?<nxtPnextauth>.+?)(?:/)?$"
+    },
+    {
+      "page": "/api/chapters/[chapterId]",
+      "regex": "^/api/chapters/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPchapterId": "nxtPchapterId"
+      },
+      "namedRegex": "^/api/chapters/(?<nxtPchapterId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/mainga-lab/characters/[id]",
+      "regex": "^/api/mainga\\-lab/characters/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/mainga\\-lab/characters/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/manga/[id]",
+      "regex": "^/api/manga/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/manga/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/manga/[id]/chapters",
+      "regex": "^/api/manga/([^/]+?)/chapters(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/manga/(?<nxtPid>[^/]+?)/chapters(?:/)?$"
+    },
+    {
+      "page": "/api/manga/[id]/comments",
+      "regex": "^/api/manga/([^/]+?)/comments(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/manga/(?<nxtPid>[^/]+?)/comments(?:/)?$"
+    },
+    {
+      "page": "/api/manga/[id]/follow",
+      "regex": "^/api/manga/([^/]+?)/follow(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/manga/(?<nxtPid>[^/]+?)/follow(?:/)?$"
+    },
+    {
+      "page": "/api/manga/[id]/ratings",
+      "regex": "^/api/manga/([^/]+?)/ratings(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/manga/(?<nxtPid>[^/]+?)/ratings(?:/)?$"
+    },
+    {
+      "page": "/api/manga/[id]/read-history",
+      "regex": "^/api/manga/([^/]+?)/read\\-history(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/manga/(?<nxtPid>[^/]+?)/read\\-history(?:/)?$"
+    },
+    {
+      "page": "/manga/[id]",
+      "regex": "^/manga/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/manga/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/manga/[id]/chapter/[chapterId]",
+      "regex": "^/manga/([^/]+?)/chapter/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid",
+        "nxtPchapterId": "nxtPchapterId"
+      },
+      "namedRegex": "^/manga/(?<nxtPid>[^/]+?)/chapter/(?<nxtPchapterId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/manga/[id]/chapter/[chapterId]/view",
+      "regex": "^/manga/([^/]+?)/chapter/([^/]+?)/view(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid",
+        "nxtPchapterId": "nxtPchapterId"
+      },
+      "namedRegex": "^/manga/(?<nxtPid>[^/]+?)/chapter/(?<nxtPchapterId>[^/]+?)/view(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/admin",
+      "regex": "^/admin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin(?:/)?$"
+    },
+    {
+      "page": "/become-author",
+      "regex": "^/become\\-author(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/become\\-author(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/profile",
+      "regex": "^/profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/profile(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "RSC",
+    "varyHeader": "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch",
+    "prefetchHeader": "Next-Router-Prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSuffix": ".prefetch.rsc",
+    "prefetchSegmentHeader": "Next-Router-Segment-Prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments"
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  },
+  "rewrites": []
+}

@@ -61,7 +61,7 @@ function isTransportError(data: any) {
   return getErrorMessage(data).toLowerCase().includes("transport error");
 }
 
-async function callSceneAnalyzer(prompt: string, outputIntent?: string) {
+async function callSceneAnalyzer(prompt: string, outputIntent?: string, characterCanon?: any) {
   const safeIntent =
     outputIntent &&
     [
@@ -75,6 +75,24 @@ async function callSceneAnalyzer(prompt: string, outputIntent?: string) {
     ].includes(outputIntent)
       ? outputIntent
       : "illustration";
+
+  // Build character canon section for the instruction
+  const charCanonSection = characterCanon
+    ? `\n\n[CRITICAL: CHARACTER IDENTITY PRESERVATION]\n` +
+      `The user has selected a character from Mainga Lab. You MUST preserve this character's identity in the scene.\n` +
+      `Character Name: ${characterCanon.name || "Unknown"}\n` +
+      `Canon Summary: ${characterCanon.canonSummary || ""}\n` +
+      `Appearance Notes: ${characterCanon.appearanceNotes || ""}\n` +
+      `Must Preserve Traits: ${characterCanon.mustPreserve || ""}\n` +
+      (characterCanon.avoidDrift ? `Known Failure Modes to AVOID: ${characterCanon.avoidDrift}\n` : "") +
+      (characterCanon.colorMode && characterCanon.colorMode !== "unspecified"
+        ? `Color Mode: ${characterCanon.colorMode}\n`
+        : "") +
+      `\nWhen building the scene_prompt, you MUST inject this character's identity. ` +
+      `Use the canon summary to describe the character. Use appearance notes for visual details. ` +
+      `Do NOT invent a different character. ` +
+      (characterCanon.primaryImageUrl ? `Reference image: ${characterCanon.primaryImageUrl}\n` : "")
+    : "";
 
   const instruction = `
 You are a scene analyzer for manga image generation.
@@ -101,6 +119,8 @@ Rules:
 - scene_prompt must be a clean scene description suitable for image generation.
 - must_have must list critical visual elements that must remain in the scene.
 
+${characterCanon ? `- subject MUST be the character from the canon - do not replace with a generic character` : ""}
+
 INTENT GUIDANCE:
 - cover = poster-like key visual, strong focal point, striking composition
 - illustration = general polished standalone image
@@ -111,6 +131,8 @@ INTENT GUIDANCE:
 - environment = place / atmosphere priority
 
 Requested output_intent: ${safeIntent}
+
+${characterCanon ? "\nIMPORTANT: The scene MUST feature the provided character with their canonical identity." : ""}
 
 Return STRICT JSON only.
 `.trim();
@@ -136,12 +158,12 @@ Return STRICT JSON only.
   return { res, data };
 }
 
-async function callSceneAnalyzerWithRetry(prompt: string, outputIntent?: string) {
+async function callSceneAnalyzerWithRetry(prompt: string, outputIntent?: string, characterCanon?: any) {
   let lastData: any = null;
   let lastStatus = 500;
 
   for (let attempt = 0; attempt < 3; attempt++) {
-    const { res, data } = await callSceneAnalyzer(prompt, outputIntent);
+    const { res, data } = await callSceneAnalyzer(prompt, outputIntent, characterCanon);
     lastData = data;
     lastStatus = res.status;
 
@@ -164,7 +186,7 @@ async function callSceneAnalyzerWithRetry(prompt: string, outputIntent?: string)
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, output_intent } = await req.json();
+    const { prompt, output_intent, character_canon } = await req.json();
 
     if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
       return NextResponse.json(
@@ -173,7 +195,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { res, data } = await callSceneAnalyzerWithRetry(prompt, output_intent);
+    const { res, data } = await callSceneAnalyzerWithRetry(prompt, output_intent, character_canon);
 
     if (!res.ok) {
       console.error("analyze-scene error:", data);
@@ -196,6 +218,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       scene: parsed,
+      character_canon: character_canon,
     });
   } catch (error: any) {
     console.error("analyze-scene route error:", error?.message || error);

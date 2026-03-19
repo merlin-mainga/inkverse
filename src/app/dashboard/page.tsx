@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import CoverImage from "@/components/CoverImage";
 import CoverEditor from "@/components/CoverEditor";
+import CharacterDetailModal from "@/components/CharacterDetailModal";
 
 const GENRES = [
   "Action",
@@ -37,16 +38,18 @@ type MangaItem = {
 
 type CharacterProfile = {
   id: string;
+  userId: string;
   name: string;
-  description?: string;
+  description: string | null;
   sourceType: string;
   primaryImageUrl: string;
+  galleryJson: unknown;
   canonSummary: string;
   appearanceNotes: string;
   mustPreserve: string;
-  avoidDrift?: string;
-  styleAffinity?: string;
-  colorMode: "monochrome" | "color" | "unspecified";
+  avoidDrift: string | null;
+  styleAffinity: string | null;
+  colorMode: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -152,9 +155,10 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "mangas" | "ai-manga" | "mainga-lab">("overview");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [labCharacters, setLabCharacters] = useState<CharacterProfile[]>([]);
-const [labLoading, setLabLoading] = useState(false);
-const [labError, setLabError] = useState("");
-const [showCreateCharacterCanon, setShowCreateCharacterCanon] = useState(false);
+  const [labLoading, setLabLoading] = useState(false);
+  const [labError, setLabError] = useState("");
+  const [selectedCharacter, setSelectedCharacter] = useState<CharacterProfile | null>(null);
+  const [showCreateCharacterCanon, setShowCreateCharacterCanon] = useState(false);
 const [characterCanonCreateMode, setCharacterCanonCreateMode] = useState<"text" | "image">("text");
 const [characterCanonTextForm, setCharacterCanonTextForm] = useState({
   name: "",
@@ -217,6 +221,7 @@ const [mangaAiFinalPromptPreview, setMangaAiFinalPromptPreview] = useState("");
   const [mangaAiRegenerating, setMangaAiRegenerating] = useState(false);
   const [mangaAiPolishing, setMangaAiPolishing] = useState(false);
   const [mangaAiOutputIntent, setMangaAiOutputIntent] = useState<OutputIntent>("illustration");
+  const [mangaAiSelectedCharacter, setMangaAiSelectedCharacter] = useState<CharacterProfile | null>(null);
 
   const [showCreateManga, setShowCreateManga] = useState(false);
   const [creatingManga, setCreatingManga] = useState(false);
@@ -706,14 +711,34 @@ async function handleSaveCharacterFromImage() {
     const originalStyle = mangaAiStyle.trim();
     const nextSeed = Math.floor(Math.random() * 1000000000) + 1;
 
+    // Build character canon injection if character is selected
+    const charCanon = mangaAiSelectedCharacter
+      ? `\n\n[CHARACTER CANON - MUST PRESERVE IDENTITY]\n` +
+        `Character Name: ${mangaAiSelectedCharacter.name}\n` +
+        `Canon Summary: ${mangaAiSelectedCharacter.canonSummary}\n` +
+        `Appearance Notes: ${mangaAiSelectedCharacter.appearanceNotes}\n` +
+        `Must Preserve: ${mangaAiSelectedCharacter.mustPreserve}` +
+        (mangaAiSelectedCharacter.avoidDrift ? `\nAvoid Drift: ${mangaAiSelectedCharacter.avoidDrift}` : "") +
+        (mangaAiSelectedCharacter.colorMode !== "unspecified" ? `\nColor Mode: ${mangaAiSelectedCharacter.colorMode}` : "")
+      : "";
+
     const [sceneRes, styleRes] = await Promise.all([
       fetch("/api/analyze-scene", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-  prompt: originalPrompt,
-  output_intent: mangaAiOutputIntent,
-}),
+          prompt: originalPrompt + charCanon,
+          output_intent: mangaAiOutputIntent,
+          character_canon: mangaAiSelectedCharacter ? {
+            name: mangaAiSelectedCharacter.name,
+            canonSummary: mangaAiSelectedCharacter.canonSummary,
+            appearanceNotes: mangaAiSelectedCharacter.appearanceNotes,
+            mustPreserve: mangaAiSelectedCharacter.mustPreserve,
+            avoidDrift: mangaAiSelectedCharacter.avoidDrift,
+            colorMode: mangaAiSelectedCharacter.colorMode,
+            primaryImageUrl: mangaAiSelectedCharacter.primaryImageUrl,
+          } : null,
+        }),
       }),
       fetch("/api/analyze-style", {
         method: "POST",
@@ -746,15 +771,24 @@ async function handleSaveCharacterFromImage() {
     }
 
     const compileRes = await fetch("/api/compile-manga-prompt", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    scene: sceneData.scene,
-    style: styleData.style,
-    prompt_mode: "fidelity",
-    output_intent: sceneData?.output_intent || mangaAiOutputIntent,
-  }),
-});
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scene: sceneData.scene,
+        style: styleData.style,
+        prompt_mode: "fidelity",
+        output_intent: sceneData?.output_intent || mangaAiOutputIntent,
+        character_canon: mangaAiSelectedCharacter ? {
+          name: mangaAiSelectedCharacter.name,
+          canonSummary: mangaAiSelectedCharacter.canonSummary,
+          appearanceNotes: mangaAiSelectedCharacter.appearanceNotes,
+          mustPreserve: mangaAiSelectedCharacter.mustPreserve,
+          avoidDrift: mangaAiSelectedCharacter.avoidDrift,
+          colorMode: mangaAiSelectedCharacter.colorMode,
+          primaryImageUrl: mangaAiSelectedCharacter.primaryImageUrl,
+        } : null,
+      }),
+    });
 
     const compileData = await compileRes.json();
 
@@ -1936,6 +1970,193 @@ async function handleSaveCharacterFromImage() {
     })}
   </div>
 </div>
+
+                {/* Character Selector */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: 12,
+                        color: "rgba(240,230,208,0.45)",
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Character from Mainga Lab
+                    </div>
+                    {mangaAiSelectedCharacter && (
+                      <button
+                        type="button"
+                        onClick={() => setMangaAiSelectedCharacter(null)}
+                        disabled={mangaAiLoading || mangaAiRegenerating || mangaAiPolishing}
+                        style={{
+                          padding: "4px 10px",
+                          borderRadius: 6,
+                          border: "1px solid rgba(255,100,100,0.2)",
+                          background: "rgba(255,80,80,0.08)",
+                          color: "rgba(255,100,100,0.7)",
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: 11,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {labCharacters.length === 0 ? (
+                    <div
+                      style={{
+                        padding: "14px 16px",
+                        borderRadius: 10,
+                        border: "1px dashed rgba(201,168,76,0.15)",
+                        background: "rgba(255,255,255,0.01)",
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: 12,
+                        color: "rgba(240,230,208,0.35)",
+                        textAlign: "center",
+                      }}
+                    >
+                      No characters saved in Mainga Lab yet.
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        flexWrap: "wrap",
+                        maxHeight: 160,
+                        overflowY: "auto",
+                        padding: "4px 0",
+                      }}
+                    >
+                      {labCharacters.map((char) => {
+                        const isSelected = mangaAiSelectedCharacter?.id === char.id;
+                        return (
+                          <div
+                            key={char.id}
+                            onClick={() => {
+                              if (!mangaAiLoading && !mangaAiRegenerating && !mangaAiPolishing) {
+                                setMangaAiSelectedCharacter(isSelected ? null : char);
+                              }
+                            }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              padding: "8px 12px",
+                              borderRadius: 10,
+                              border: isSelected
+                                ? "2px solid #c9a84c"
+                                : "1px solid rgba(201,168,76,0.18)",
+                              background: isSelected
+                                ? "rgba(201,168,76,0.1)"
+                                : "rgba(255,255,255,0.02)",
+                              cursor: mangaAiLoading || mangaAiRegenerating || mangaAiPolishing
+                                ? "not-allowed"
+                                : "pointer",
+                              opacity: mangaAiLoading || mangaAiRegenerating || mangaAiPolishing ? 0.5 : 1,
+                              transition: "all 0.2s",
+                              minWidth: 120,
+                              maxWidth: 200,
+                            }}
+                          >
+                            {char.primaryImageUrl ? (
+                              <img
+                                src={char.primaryImageUrl}
+                                alt={char.name}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 8,
+                                  objectFit: "cover",
+                                  flexShrink: 0,
+                                }}
+                              />
+                            ) : (
+                              <div
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 8,
+                                  background: "rgba(201,168,76,0.08)",
+                                  border: "1px solid rgba(201,168,76,0.15)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontFamily: "'Cinzel', serif",
+                                  fontSize: 14,
+                                  color: "#c9a84c",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {char.name.charAt(0)}
+                              </div>
+                            )}
+                            <div style={{ minWidth: 0 }}>
+                              <div
+                                style={{
+                                  fontFamily: "'Inter', sans-serif",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  color: "#f5eedf",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {char.name}
+                              </div>
+                              <div
+                                style={{
+                                  fontFamily: "'Inter', sans-serif",
+                                  fontSize: 10,
+                                  color: "rgba(240,230,208,0.4)",
+                                  textTransform: "capitalize",
+                                }}
+                              >
+                                {char.colorMode}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {mangaAiSelectedCharacter && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        border: "1px solid rgba(201,168,76,0.12)",
+                        background: "rgba(201,168,76,0.04)",
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: 11,
+                        color: "rgba(240,230,208,0.6)",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      <div style={{ color: "#c9a84c", marginBottom: 4, fontWeight: 600 }}>
+                        Canon: {mangaAiSelectedCharacter.canonSummary.slice(0, 100)}
+                        {mangaAiSelectedCharacter.canonSummary.length > 100 ? "..." : ""}
+                      </div>
+                      <div style={{ color: "rgba(240,230,208,0.4)" }}>
+                        {mangaAiSelectedCharacter.appearanceNotes.slice(0, 80)}
+                        {mangaAiSelectedCharacter.appearanceNotes.length > 80 ? "..." : ""}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   {[
@@ -3688,11 +3909,24 @@ async function handleSaveCharacterFromImage() {
             {labCharacters.map((character) => (
               <div
                 key={character.id}
+                onClick={() => setSelectedCharacter(character)}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.borderColor = "rgba(201,168,76,0.28)";
+                  el.style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.borderColor = "rgba(201,168,76,0.12)";
+                  el.style.transform = "translateY(0)";
+                }}
                 style={{
                   border: "1px solid rgba(201,168,76,0.12)",
                   borderRadius: 14,
                   overflow: "hidden",
                   background: "rgba(255,255,255,0.015)",
+                  cursor: "pointer",
+                  transition: "border-color 0.2s, transform 0.15s",
                 }}
               >
                 <div
@@ -4872,6 +5106,22 @@ async function handleSaveCharacterFromImage() {
       </div>
     </div>
   </div>
+  {selectedCharacter && (
+    <CharacterDetailModal
+      character={selectedCharacter as CharacterProfile}
+      onClose={() => setSelectedCharacter(null)}
+      onSave={(updated) => {
+        setLabCharacters((prev) =>
+          prev.map((c) => (c.id === updated.id ? updated : c))
+        );
+        setSelectedCharacter(null);
+      }}
+      onDelete={(id) => {
+        setLabCharacters((prev) => prev.filter((c) => c.id !== id));
+        setSelectedCharacter(null);
+      }}
+    />
+  )}
 </div>
-  );
+);
 }

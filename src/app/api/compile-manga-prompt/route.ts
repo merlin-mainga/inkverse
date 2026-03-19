@@ -133,18 +133,35 @@ function getColorDirection(wantsMonochrome: boolean) {
   };
 }
 
-async function callCompiler(scene: any, style: any, outputIntentFromBody?: unknown) {
+async function callCompiler(scene: any, style: any, outputIntentFromBody?: unknown, characterCanon?: any) {
   const outputIntent = resolveOutputIntent(scene, outputIntentFromBody);
   const intentDirection = getIntentDirection(outputIntent);
   const wantsMonochrome = detectMonochromeIntent(scene, style);
   const { colorDirection, negativeColor } = getColorDirection(wantsMonochrome);
+
+  // Build character canon instructions
+  const charCanonInstruction = characterCanon
+    ? `\n\nCHARACTER IDENTITY PRESERVATION (CRITICAL):\n` +
+      `A character from Mainga Lab has been selected. You MUST preserve this character's identity in ALL generated prompts.\n` +
+      `Character: ${characterCanon.name || "Unknown"}\n` +
+      `Canon: ${characterCanon.canonSummary || ""}\n` +
+      `Appearance: ${characterCanon.appearanceNotes || ""}\n` +
+      `Must Preserve: ${characterCanon.mustPreserve || ""}\n` +
+      (characterCanon.avoidDrift ? `Avoid Drift: ${characterCanon.avoidDrift}\n` : "") +
+      (characterCanon.colorMode && characterCanon.colorMode !== "unspecified" ? `Color Mode: ${characterCanon.colorMode}\n` : "") +
+      `\nRules for character preservation:\n` +
+      `- In scene_prompt: Describe the character using canonSummary and appearanceNotes. Do NOT describe a generic character.\n` +
+      `- In final_prompt: Inject character identity at the start of the prompt. Reference canon traits.\n` +
+      `- In all prompts: Never invent different hair color, eye color, outfit, or identity.\n` +
+      `- If output_intent is portrait/full-body/action: emphasize the character's distinctive traits.\n`
+    : "";
 
   const instruction = `
 You are a prompt compiler specialized for FLUX.2-dev HQ manga generation.
 
 You receive:
 1. scene analysis = what to draw
-2. style analysis = how to draw
+2. style analysis = how to draw${charCanonInstruction ? "\n3. character canon = whose identity to preserve" : ""}
 
 Your job:
 - Merge scene and style into prompts for HQ manga generation and HQ regeneration flows.
@@ -152,7 +169,7 @@ Your job:
 - Preserve whether the intended rendering is monochrome or full color.
 - Respect output_intent exactly.
 - Keep the result visually clear, grounded, and easy for the model to follow.
-- Return strict JSON only.
+- Return strict JSON only.${charCanonInstruction || "\n- Do not invent unrelated characters."}
 
 GENERAL RULES:
 - Write everything in English.
@@ -249,7 +266,10 @@ MONOCHROME REQUIRED:
 ${JSON.stringify(wantsMonochrome, null, 2)}
 
 FORCED COLOR NEGATIVE HINT:
-${JSON.stringify(negativeColor, null, 2)}
+${JSON.stringify(negativeColor, null, 2)}${characterCanon ? `
+
+CHARACTER CANON (MUST USE):
+${JSON.stringify(characterCanon, null, 2)}` : ""}
 `.trim();
 
   const res = await fetch(
@@ -276,7 +296,8 @@ ${JSON.stringify(negativeColor, null, 2)}
 async function callCompilerWithRetry(
   scene: any,
   style: any,
-  outputIntentFromBody?: unknown
+  outputIntentFromBody?: unknown,
+  characterCanon?: any
 ) {
   let lastData: any = null;
   let lastStatus = 500;
@@ -288,7 +309,7 @@ async function callCompilerWithRetry(
 
   for (let attempt = 0; attempt < 3; attempt++) {
     const { res, data, outputIntent, wantsMonochrome, negativeColor } =
-      await callCompiler(scene, style, outputIntentFromBody);
+      await callCompiler(scene, style, outputIntentFromBody, characterCanon);
 
     lastData = data;
     lastStatus = res.status;
@@ -342,7 +363,7 @@ function appendNegative(base: string, extra: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { scene, style, output_intent } = await req.json();
+    const { scene, style, output_intent, character_canon } = await req.json();
 
     if (!scene || typeof scene !== "object" || !scene.scene_prompt) {
       return NextResponse.json(
@@ -359,7 +380,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { res, data, outputIntent, wantsMonochrome, negativeColor } =
-      await callCompilerWithRetry(scene, style, output_intent);
+      await callCompilerWithRetry(scene, style, output_intent, character_canon);
 
     if (!res.ok) {
       console.error("compile-prompt error:", data);

@@ -22,9 +22,10 @@ async function requirePro(userId: string) {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const auth = await requireUser();
     if ("error" in auth) return auth.error;
 
@@ -38,7 +39,7 @@ export async function PATCH(
 
     const existing = await prisma.characterProfile.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: auth.userId,
       },
     });
@@ -74,7 +75,7 @@ export async function PATCH(
     }
 
     const character = await prisma.characterProfile.update({
-      where: { id: params.id },
+      where: { id },
       data,
     });
 
@@ -93,9 +94,10 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const auth = await requireUser();
     if ("error" in auth) return auth.error;
 
@@ -109,7 +111,7 @@ export async function DELETE(
 
     const existing = await prisma.characterProfile.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: auth.userId,
       },
     });
@@ -122,7 +124,7 @@ export async function DELETE(
     }
 
     await prisma.characterProfile.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({

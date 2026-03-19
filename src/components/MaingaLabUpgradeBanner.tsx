@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Sparkles, Wand2, Shield, Zap, Crown, Check, ImageIcon } from "lucide-react";
+import Head from "next/head";
 
 interface PricingTier {
   name: string;
@@ -41,7 +42,7 @@ const pricingTiers: PricingTier[] = [
   },
   {
     name: "Pro",
-    tagline: "Đây là lúc nhân vật của mày thật sự là 'của mày'.",
+    tagline: "Đây là lúc nhân vật của bạn thật sự là 'của bạn'.",
     subtext: "Bước ngoặt từ 'thử chơi' sang thật sự viết truyện",
     monthlyUsd: "$4.99",
     yearlyUsd: "$3.99",
@@ -62,7 +63,7 @@ const pricingTiers: PricingTier[] = [
   },
   {
     name: "Max",
-    tagline: "Nếu mày nghiêm túc với việc viết manga — đây là gear của pro.",
+    tagline: "Nếu bạn nghiêm túc với việc viết manga — đây là gear của pro.",
     subtext: "Cho những ai không chỉ thích đọc manga",
     monthlyUsd: "$9.99",
     yearlyUsd: "$7.99",
@@ -71,7 +72,7 @@ const pricingTiers: PricingTier[] = [
     mana: 800,
     exclusive: true,
     hasMaingaLab: true,
-    cta: "All-in với manga của mày →",
+    cta: "All-in với manga của bạn →",
     isYearlyDiscount: true,
     features: [
       "Mainga Lab không giới hạn",
@@ -93,6 +94,10 @@ export default function MaingaLabUpgradeBanner() {
   const [isYearly, setIsYearly] = useState(false);
 
   return (
+    <>
+      <Head>
+        <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+      </Head>
     <div
       style={{
         background: "linear-gradient(180deg, rgba(20,18,12,0.98), rgba(12,10,6,0.99))",
@@ -125,7 +130,7 @@ export default function MaingaLabUpgradeBanner() {
 
         <h2
           style={{
-            fontFamily: "'Cinzel', serif",
+            fontFamily: "'Be Vietnam Pro', sans-serif",
             fontSize: 24,
             fontWeight: 700,
             color: "#f0e6d0",
@@ -134,7 +139,7 @@ export default function MaingaLabUpgradeBanner() {
             lineHeight: 1.3,
           }}
         >
-          Câu chuyện của mày. Nhân vật của mày. Giờ mày là tác giả.
+          Câu chuyện của bạn. Nhân vật của bạn. Giờ bạn là tác giả.
         </h2>
 
         <p
@@ -621,5 +626,6 @@ export default function MaingaLabUpgradeBanner() {
         </p>
       </div>
     </div>
+    </>
   );
 }

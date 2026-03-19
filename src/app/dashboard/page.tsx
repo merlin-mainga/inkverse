@@ -222,6 +222,7 @@ const [mangaAiFinalPromptPreview, setMangaAiFinalPromptPreview] = useState("");
   const [mangaAiPolishing, setMangaAiPolishing] = useState(false);
   const [mangaAiOutputIntent, setMangaAiOutputIntent] = useState<OutputIntent>("illustration");
   const [mangaAiSelectedCharacter, setMangaAiSelectedCharacter] = useState<CharacterProfile | null>(null);
+  const [mangaAiUseCharacterReference, setMangaAiUseCharacterReference] = useState(false);
 
   const [showCreateManga, setShowCreateManga] = useState(false);
   const [creatingManga, setCreatingManga] = useState(false);
@@ -811,37 +812,87 @@ async function handleSaveCharacterFromImage() {
     setMangaAiBaseSeed(nextSeed);
     setMangaAiFinalPromptPreview(compiled.final_prompt || "");
 
-    const imageRes = await fetch("/api/generate-manga-cf", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: originalPrompt,
-        analyzedPrompt: compiled.final_prompt,
-        negative_prompt: compiled.negative_prompt,
-        mode: "hq",
-        seed: nextSeed,
-        count: 1,
-      }),
-    });
+    // Decide generation method: IP-Adapter or CF Workers
+    const useIPAdapter = mangaAiUseCharacterReference &&
+      mangaAiSelectedCharacter?.primaryImageUrl &&
+      mangaAiSelectedCharacter.primaryImageUrl.length > 0;
 
-    const imageData = await imageRes.json();
+    let images: string[] = [];
 
-    if (!imageRes.ok) {
-      clearInterval(progressTimer);
-      setMangaAiProgress(0);
-      setMangaAiError(imageData?.error || "Tạo ảnh thất bại.");
-      setMangaAiLoading(false);
-      return;
-    }
+    if (useIPAdapter) {
+      // Use IP-Adapter for character-consistent generation
+      setMangaAiError("");
 
-    const images = Array.isArray(imageData?.images) ? imageData.images : [];
+      const imageRes = await fetch("/api/generate-with-character", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: compiled.final_prompt || originalPrompt,
+          characterImageUrl: mangaAiSelectedCharacter!.primaryImageUrl,
+          negativePrompt: compiled.negative_prompt || "low quality, blurry, bad anatomy",
+          width: 768,
+          height: 1024,
+          steps: 25,
+          cfgScale: 5,
+          seed: nextSeed,
+        }),
+      });
 
-    if (images.length === 0) {
-      clearInterval(progressTimer);
-      setMangaAiProgress(0);
-      setMangaAiError("Không nhận được ảnh từ AI.");
-      setMangaAiLoading(false);
-      return;
+      const imageData = await imageRes.json();
+
+      if (!imageRes.ok) {
+        clearInterval(progressTimer);
+        setMangaAiProgress(0);
+        setMangaAiError(imageData?.error || "IP-Adapter generation failed.");
+        setMangaAiLoading(false);
+        return;
+      }
+
+      // IP-Adapter returns image as array
+      const ipAdapterOutput = Array.isArray(imageData?.image) ? imageData.image : [imageData?.image];
+      images = ipAdapterOutput.filter(Boolean);
+
+      if (images.length === 0) {
+        clearInterval(progressTimer);
+        setMangaAiProgress(0);
+        setMangaAiError("No image returned from IP-Adapter.");
+        setMangaAiLoading(false);
+        return;
+      }
+    } else {
+      // Use CF Workers (original flow)
+      const imageRes = await fetch("/api/generate-manga-cf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: originalPrompt,
+          analyzedPrompt: compiled.final_prompt,
+          negative_prompt: compiled.negative_prompt,
+          mode: "hq",
+          seed: nextSeed,
+          count: 1,
+        }),
+      });
+
+      const imageData = await imageRes.json();
+
+      if (!imageRes.ok) {
+        clearInterval(progressTimer);
+        setMangaAiProgress(0);
+        setMangaAiError(imageData?.error || "Tạo ảnh thất bại.");
+        setMangaAiLoading(false);
+        return;
+      }
+
+      images = Array.isArray(imageData?.images) ? imageData.images : [];
+
+      if (images.length === 0) {
+        clearInterval(progressTimer);
+        setMangaAiProgress(0);
+        setMangaAiError("Không nhận được ảnh từ AI.");
+        setMangaAiLoading(false);
+        return;
+      }
     }
 
     clearInterval(progressTimer);
@@ -2154,6 +2205,95 @@ async function handleSaveCharacterFromImage() {
                         {mangaAiSelectedCharacter.appearanceNotes.slice(0, 80)}
                         {mangaAiSelectedCharacter.appearanceNotes.length > 80 ? "..." : ""}
                       </div>
+                    </div>
+                  )}
+
+                  {/* IP-Adapter Toggle */}
+                  {mangaAiSelectedCharacter && mangaAiSelectedCharacter.primaryImageUrl && (
+                    <div
+                      style={{
+                        marginTop: 12,
+                        padding: "12px 16px",
+                        borderRadius: 10,
+                        border: mangaAiUseCharacterReference
+                          ? "1px solid #c9a84c"
+                          : "1px solid rgba(201,168,76,0.15)",
+                        background: mangaAiUseCharacterReference
+                          ? "rgba(201,168,76,0.08)"
+                          : "rgba(255,255,255,0.02)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 200 }}>
+                        <div
+                          style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#f5eedf",
+                            marginBottom: 4,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <path d="M21 15l-5-5L5 21" />
+                          </svg>
+                          Use Character Reference (IP-Adapter)
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: 11,
+                            color: "rgba(240,230,208,0.45)",
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          Inject reference image for stronger character consistency. Uses Replicate IP-Adapter.
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setMangaAiUseCharacterReference(!mangaAiUseCharacterReference)}
+                        disabled={mangaAiLoading || mangaAiRegenerating || mangaAiPolishing}
+                        style={{
+                          width: 48,
+                          height: 26,
+                          borderRadius: 13,
+                          border: "none",
+                          background: mangaAiUseCharacterReference
+                            ? "linear-gradient(135deg, #c9a84c, #8b6914)"
+                            : "rgba(255,255,255,0.1)",
+                          cursor: mangaAiLoading || mangaAiRegenerating || mangaAiPolishing
+                            ? "not-allowed"
+                            : "pointer",
+                          position: "relative",
+                          transition: "background 0.2s",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: "50%",
+                            background: "#fff",
+                            position: "absolute",
+                            top: 3,
+                            left: mangaAiUseCharacterReference ? 25 : 3,
+                            transition: "left 0.2s",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                          }}
+                        />
+                      </button>
                     </div>
                   )}
                 </div>

@@ -20,6 +20,13 @@ model User {
   updatedAt        DateTime      @updatedAt
   role             String        @default("user")
   emailVerifyToken String?
+
+  // Mana System
+  mana             Int           @default(10)
+  manaResetDate    DateTime      @default(now())
+  subscriptionTier String        @default("FREE") // FREE/STARTER/PRO/MAX
+  subscriptionExpiry DateTime?
+
   accounts         Account[]
   comments         Comment[]
   follows          Follow[]
@@ -27,7 +34,7 @@ model User {
   ratings          Rating[]
   readHistory      ReadHistory[]
   sessions         Session[]
-  characters CharacterProfile[]
+  characters       CharacterProfile[]
 }
 
 model CharacterProfile {

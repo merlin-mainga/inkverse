@@ -14,9 +14,28 @@ async function requireUser() {
   return { userId };
 }
 
-// TODO: thay bằng check Pro thật của mày
+// Mainga Lab chỉ dành cho PRO và MAX
 async function requirePro(userId: string) {
-  void userId;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { subscriptionTier: true, subscriptionExpiry: true },
+  });
+
+  if (!user) return false;
+
+  const isProOrMax =
+    user.subscriptionTier === "PRO" || user.subscriptionTier === "MAX";
+
+  if (!isProOrMax) return false;
+
+  // Check expiry nếu có
+  if (
+    user.subscriptionExpiry &&
+    user.subscriptionExpiry < new Date()
+  ) {
+    return false;
+  }
+
   return true;
 }
 

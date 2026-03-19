@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const HQ_MODEL = "@cf/black-forest-labs/flux-2-dev";
 
@@ -404,6 +406,12 @@ async function generateOne(
 
 export async function POST(req: NextRequest) {
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
 
     const generationIntent = resolveGenerationIntent(body);
@@ -422,6 +430,31 @@ export async function POST(req: NextRequest) {
     if (!sourcePrompt.trim()) {
       return NextResponse.json({ error: "Prompt không hợp lệ." }, { status: 400 });
     }
+
+    // Deduct mana before generation
+    const manaRes = await fetch(req.url.replace("/api/generate-manga-cf", "/api/mana/deduct"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: req.headers.get("cookie") || "",
+      },
+      body: JSON.stringify({ amount: 1 }),
+    });
+
+    if (!manaRes.ok) {
+      const manaError = await manaRes.json();
+      return NextResponse.json(
+        {
+          error: manaError.error || "Không đủ Mana",
+          code: manaError.code || "INSUFFICIENT_MANA",
+          currentMana: manaError.currentMana,
+          tier: manaError.tier,
+        },
+        { status: 403 }
+      );
+    }
+
+    const manaData = await manaRes.json();
 
     const cleanPrompt = sanitizePrompt(sourcePrompt);
     const finalPrompt =

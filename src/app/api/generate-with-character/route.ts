@@ -1,5 +1,7 @@
 import Replicate from "replicate";
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
@@ -11,6 +13,12 @@ const MODEL = "stability-ai/sdxl:392573f9ac8c7f6153001c5ef00fc9fd6611ad361e3ead0
 
 export async function POST(req: NextRequest) {
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const {
       prompt,
@@ -37,6 +45,31 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Deduct mana before generation
+    const manaRes = await fetch(req.url.replace("/api/generate-with-character", "/api/mana/deduct"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: req.headers.get("cookie") || "",
+      },
+      body: JSON.stringify({ amount: 1 }),
+    });
+
+    if (!manaRes.ok) {
+      const manaError = await manaRes.json();
+      return NextResponse.json(
+        {
+          error: manaError.error || "Không đủ Mana",
+          code: manaError.code || "INSUFFICIENT_MANA",
+          currentMana: manaError.currentMana,
+          tier: manaError.tier,
+        },
+        { status: 403 }
+      );
+    }
+
+    const manaData = await manaRes.json();
 
     // Build anime-optimized negative prompt
     const defaultNegative =
@@ -77,6 +110,7 @@ export async function POST(req: NextRequest) {
       image: images,
       method: "sdxl-img2img",
       model: MODEL,
+      mana: manaData,
     });
   } catch (error: any) {
     console.error("[Character Ref] Full error:", error);

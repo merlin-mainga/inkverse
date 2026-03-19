@@ -3,6 +3,31 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+// Mainga Lab chỉ dành cho PRO và MAX
+async function requirePro(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { subscriptionTier: true, subscriptionExpiry: true },
+  });
+
+  if (!user) return false;
+
+  const isProOrMax =
+    user.subscriptionTier === "PRO" || user.subscriptionTier === "MAX";
+
+  if (!isProOrMax) return false;
+
+  // Check expiry nếu có
+  if (
+    user.subscriptionExpiry &&
+    user.subscriptionExpiry < new Date()
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 function detectColorMode(input?: string) {
   if (input === "monochrome" || input === "color") return input;
   return "unspecified";
@@ -48,9 +73,18 @@ function buildCanonFromImage({
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
 
-    if (!session?.user?.email) {
+    if (!session || !userId) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    const isPro = await requirePro(userId);
+    if (!isPro) {
+      return NextResponse.json(
+        { error: "Mainga Lab chỉ dành cho gói Pro." },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();

@@ -5,8 +5,9 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-// IP-Adapter SDXL Face model for character-consistent generation
-const IP_ADAPTER_MODEL = "lucataco/ip_adapter-sdxl-face:226c6bf6";
+// Using SDXL img2img for character-consistent generation
+// Model: stability-ai/sdxl with image-to-image mode
+const MODEL = "stability-ai/sdxl:392573f9ac8c7f6153001c5ef00fc9fd6611ad361e3ead07160116747895d7ad";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,9 +18,10 @@ export async function POST(req: NextRequest) {
       negativePrompt,
       width = 768,
       height = 1024,
-      steps = 25,
-      cfgScale = 5,
+      steps = 30,
+      cfgScale = 7.5,
       seed = -1,
+      promptStrength = 0.45, // Lower = more character preservation, higher = more prompt adherence
     } = body;
 
     if (!prompt || typeof prompt !== "string") {
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     if (!characterImageUrl || typeof characterImageUrl !== "string") {
       return NextResponse.json(
-        { error: "Character reference image URL la bat buoc cho IP-Adapter generation" },
+        { error: "Character reference image URL la bat buoc" },
         { status: 400 }
       );
     }
@@ -45,36 +47,41 @@ export async function POST(req: NextRequest) {
 
     const finalNegative = negativePrompt || defaultNegative;
 
-    console.log("[IP-Adapter] Starting generation with character:", characterImageUrl);
-    console.log("[IP-Adapter] Prompt:", prompt);
+    console.log("[Character Ref] Starting img2img with character:", characterImageUrl);
+    console.log("[Character Ref] Prompt:", prompt);
+    console.log("[Character Ref] Prompt strength:", promptStrength);
 
-    const output = await replicate.run(IP_ADAPTER_MODEL, {
+    const output = await replicate.run(MODEL, {
       input: {
-        seed: seed === -1 ? Math.floor(Math.random() * 999999999) : seed,
-        image: characterImageUrl,
         prompt: prompt,
         negative_prompt: finalNegative,
+        image: characterImageUrl,
+        prompt_strength: promptStrength, // Controls how much the image is transformed
         width: width,
         height: height,
         num_inference_steps: steps,
         guidance_scale: cfgScale,
         num_outputs: 1,
-        scheduler: "Euler a",
+        scheduler: "K_EULER",
+        seed: seed === -1 ? Math.floor(Math.random() * 999999999) : seed,
       },
     });
 
-    console.log("[IP-Adapter] Generation complete");
+    console.log("[Character Ref] Generation complete");
+
+    // SDXL returns array of image URLs
+    const images = Array.isArray(output) ? output : [output];
 
     return NextResponse.json({
       ok: true,
-      image: output,
-      method: "ip-adapter",
-      model: IP_ADAPTER_MODEL,
+      image: images,
+      method: "sdxl-img2img",
+      model: MODEL,
     });
   } catch (error: any) {
-    console.error("[IP-Adapter] Full error:", error);
-    console.error("[IP-Adapter] Error message:", error?.message);
-    console.error("[IP-Adapter] Error response:", error?.response?.data);
+    console.error("[Character Ref] Full error:", error);
+    console.error("[Character Ref] Error message:", error?.message);
+    console.error("[Character Ref] Error response:", error?.response?.data);
 
     // Handle specific error types
     if (error?.message?.includes("rate limit")) {
@@ -92,7 +99,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: error?.message || "IP-Adapter generation failed" },
+      { error: error?.message || "Character reference generation failed" },
       { status: 500 }
     );
   }

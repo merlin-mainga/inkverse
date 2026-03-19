@@ -51,8 +51,12 @@ export async function PATCH(
     const isPro = await requirePro(auth.userId);
     if (!isPro) {
       return NextResponse.json(
-        { error: "Mainga Lab chỉ dành cho gói Pro." },
-        { status: 403 }
+        { 
+          error: "Mainga Lab chỉ dành cho gói Pro.",
+          code: "SUBSCRIPTION_REQUIRED",
+          tierRequired: "PRO"
+        },
+        { status: 402 }
       );
     }
 
@@ -123,8 +127,12 @@ export async function DELETE(
     const isPro = await requirePro(auth.userId);
     if (!isPro) {
       return NextResponse.json(
-        { error: "Mainga Lab chỉ dành cho gói Pro." },
-        { status: 403 }
+        { 
+          error: "Mainga Lab chỉ dành cho gói Pro.",
+          code: "SUBSCRIPTION_REQUIRED",
+          tierRequired: "PRO"
+        },
+        { status: 402 }
       );
     }
 

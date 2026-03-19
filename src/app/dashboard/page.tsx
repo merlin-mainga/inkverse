@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import CoverImage from "@/components/CoverImage";
 import CoverEditor from "@/components/CoverEditor";
 import CharacterDetailModal from "@/components/CharacterDetailModal";
+import MaingaLabUpgradeBanner from "@/components/MaingaLabUpgradeBanner";
 
 const GENRES = [
   "Action",
@@ -157,6 +158,7 @@ export default function DashboardPage() {
   const [labCharacters, setLabCharacters] = useState<CharacterProfile[]>([]);
   const [labLoading, setLabLoading] = useState(false);
   const [labError, setLabError] = useState("");
+  const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterProfile | null>(null);
   const [showCreateCharacterCanon, setShowCreateCharacterCanon] = useState(false);
 const [characterCanonCreateMode, setCharacterCanonCreateMode] = useState<"text" | "image">("text");
@@ -297,6 +299,7 @@ useEffect(() => {
 async function fetchLabCharacters() {
   setLabLoading(true);
   setLabError("");
+  setShowUpgradeBanner(false);
 
   try {
     const res = await fetch("/api/mainga-lab/characters", {
@@ -304,6 +307,13 @@ async function fetchLabCharacters() {
     });
 
     const data = await res.json().catch(() => ({}));
+
+    if (res.status === 402) {
+      setLabCharacters([]);
+      setShowUpgradeBanner(true);
+      setLabLoading(false);
+      return;
+    }
 
     if (!res.ok) {
       setLabCharacters([]);
@@ -378,6 +388,13 @@ async function handleSaveCharacterCanonText() {
       return;
     }
 
+    if (res.status === 402) {
+      setShowUpgradeBanner(true);
+      setCharacterCanonSaveError("");
+      setSavingCharacterCanon(false);
+      return;
+    }
+
     await fetchLabCharacters();
     resetCharacterCanonTextForm();
     setShowCreateCharacterCanon(false);
@@ -418,6 +435,13 @@ async function handleSaveCharacterFromImage() {
 
     if (!res.ok) {
       setCharacterImageSaveError(data?.error || "Không thể tạo character từ image.");
+      setSavingCharacterFromImage(false);
+      return;
+    }
+
+    if (res.status === 402) {
+      setShowUpgradeBanner(true);
+      setCharacterImageSaveError("");
       setSavingCharacterFromImage(false);
       return;
     }
@@ -2960,6 +2984,7 @@ async function handleSaveCharacterFromImage() {
         gap: 20,
       }}
     >
+      {showUpgradeBanner && <MaingaLabUpgradeBanner />}
       <div
         style={{
           background: "rgba(255,255,255,0.02)",

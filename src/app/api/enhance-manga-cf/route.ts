@@ -1,27 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
-
-function stripDataUrl(dataUrl: string) {
-  const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
-  if (!match) return null;
-
-  return {
-    mimeType: match[1],
-    base64: match[2],
-  };
-}
-
-function base64ToBlob(base64: string, mimeType: string) {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  return new Blob([bytes], { type: mimeType || "image/png" });
-}
+import fal from "@/lib/fal";
 
 function buildEnhancePrompt(prompt: string) {
   return [
@@ -79,38 +57,6 @@ function buildNegativePrompt() {
   ].join(", ");
 }
 
-function buildStrength() {
-  return "0.09";
-}
-
-async function callFluxEnhance(form: FormData) {
-  for (let i = 0; i < 3; i++) {
-    const res = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${MODEL}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-        },
-        body: form,
-      }
-    );
-
-    const data = await res.json();
-
-    const capacityError =
-      data?.errors?.[0]?.message?.includes("Capacity temporarily exceeded");
-
-    if (!capacityError) {
-      return { res, data };
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-  }
-
-  throw new Error("Flux enhance capacity exceeded.");
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { prompt, image } = await req.json();
@@ -129,42 +75,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const parsed = stripDataUrl(image);
+    // For Fal.ai image-to-image, use the image URL directly
+    // If image is a data URL, we need to upload it first or use it as-is
+    const imageUrl = image;
 
-    if (!parsed) {
-      return NextResponse.json(
-        { error: "Không đọc được ảnh draft." },
-        { status: 400 }
-      );
-    }
+    const result: any = await fal.subscribe("fal-ai/flux/dev/image-to-image", {
+      input: {
+        prompt: buildEnhancePrompt(prompt),
+        image_url: imageUrl,
+        strength: 0.75,
+      },
+      logs: true,
+    });
 
-    const blob = base64ToBlob(parsed.base64, parsed.mimeType || "image/png");
-
-    const form = new FormData();
-    form.append("prompt", buildEnhancePrompt(prompt));
-    form.append("negative_prompt", buildNegativePrompt());
-    form.append("strength", buildStrength());
-    form.append("input_image_0", blob, "draft.png");
-
-    const { res, data } = await callFluxEnhance(form);
-
-    if (!res.ok) {
-      console.error("enhance error:", data);
-
-      return NextResponse.json(
-        {
-          error:
-            data?.errors?.[0]?.message ||
-            data?.result?.error ||
-            "Enhance failed.",
-        },
-        { status: res.status }
-      );
-    }
-
-    const imageOut = data?.result?.image || data?.image || null;
+    const imageOut = result?.images?.[0]?.url || result?.image?.url;
 
     if (!imageOut) {
+      console.error("Fal enhance response:", JSON.stringify(result).substring(0, 500));
       return NextResponse.json(
         { error: "Không nhận được ảnh final." },
         { status: 500 }

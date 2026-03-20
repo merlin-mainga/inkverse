@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-
-const HQ_MODEL = "@cf/black-forest-labs/flux-2-dev";
+import fal from "@/lib/fal";
 
 type RejectReason =
   | "hand-anatomy"
@@ -53,22 +52,6 @@ function sanitizeNegativePrompt(negative: string) {
     .trim();
 }
 
-function getErrorMessage(data: any) {
-  return data?.errors?.[0]?.message || data?.result?.error || "";
-}
-
-function isFlaggedError(data: any) {
-  return getErrorMessage(data).includes("flagged");
-}
-
-function isNsfwError(data: any) {
-  return getErrorMessage(data).includes("NSFW");
-}
-
-function isFlaggedLikeError(data: any) {
-  return isFlaggedError(data) || isNsfwError(data);
-}
-
 function normalizeRejectReason(value: unknown): RejectReason | null {
   if (
     value === "hand-anatomy" ||
@@ -79,7 +62,6 @@ function normalizeRejectReason(value: unknown): RejectReason | null {
   ) {
     return value;
   }
-
   return null;
 }
 
@@ -93,7 +75,6 @@ function resolveGenerationIntent(body: any): GenerationIntent {
   ) {
     return "variation";
   }
-
   return "initial";
 }
 
@@ -340,68 +321,17 @@ function resolveRequestedCount(body: any, generationIntent: GenerationIntent) {
   return generationIntent === "initial" ? 1 : 2;
 }
 
-async function runHQFlux(prompt: string, negative: string, seed: number) {
-  const form = new FormData();
-  form.append("prompt", prompt);
-  form.append("negative_prompt", negative);
-  form.append("seed", String(seed));
+async function generateWithFal(prompt: string, seed: number) {
+  const result: any = await fal.subscribe("fal-ai/flux/dev", {
+    input: {
+      prompt,
+      image_size: "landscape_4_3",
+      seed: seed,
+    },
+    logs: true,
+  });
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 35000);
-
-  try {
-    const res = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${HQ_MODEL}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-        },
-        body: form,
-        signal: controller.signal,
-      }
-    );
-
-    const data = await res.json();
-    return { res, data };
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function generateOne(
-  prompt: string,
-  negative: string,
-  seed: number,
-  generationIntent: GenerationIntent,
-  rejectReason: RejectReason | null
-) {
-  const promptVariants = buildFlagSafePromptVariants(prompt, generationIntent, rejectReason);
-  const negativeVariants = Array.from(
-    new Set([negative, sanitizeNegativePrompt(negative)].filter(Boolean))
-  );
-
-  let lastError = "Cloudflare generate failed.";
-
-  for (const promptVariant of promptVariants) {
-    for (const negativeVariant of negativeVariants) {
-      const { res, data } = await runHQFlux(promptVariant, negativeVariant, seed);
-
-      if (res.ok) {
-        const image = data?.result?.image || data?.image || null;
-        if (!image) throw new Error("Không nhận được ảnh từ AI.");
-        return image as string;
-      }
-
-      lastError = getErrorMessage(data) || lastError;
-
-      if (!isFlaggedLikeError(data)) {
-        throw new Error(lastError);
-      }
-    }
-  }
-
-  throw new Error(lastError);
+  return result;
 }
 
 export async function POST(req: NextRequest) {
@@ -454,8 +384,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const manaData = await manaRes.json();
-
     const cleanPrompt = sanitizePrompt(sourcePrompt);
     const finalPrompt =
       generationIntent === "variation"
@@ -480,18 +408,20 @@ export async function POST(req: NextRequest) {
 
     while (images.length < requestedCount && attempts < maxAttempts) {
       try {
-        const img = await generateOne(
-          finalPrompt,
-          negative,
-          currentSeed,
-          generationIntent,
-          rejectReason
-        );
-        images.push(img);
-        usedSeeds.push(currentSeed);
+        const result = await generateWithFal(finalPrompt, currentSeed);
+        
+        // Extract image URL from Fal response
+        const imageUrl = result?.images?.[0]?.url || result?.image?.url;
+        
+        if (imageUrl) {
+          images.push(imageUrl);
+          usedSeeds.push(currentSeed);
 
-        if (generationIntent === "initial" && images.length >= 1) {
-          break;
+          if (generationIntent === "initial" && images.length >= 1) {
+            break;
+          }
+        } else {
+          console.error(`Fal returned no image for seed ${currentSeed}:`, JSON.stringify(result).substring(0, 500));
         }
       } catch (err) {
         console.error(`generate failed for seed ${currentSeed}:`, err);
@@ -526,7 +456,7 @@ export async function POST(req: NextRequest) {
       seed_strategy: seedStrategy,
     });
   } catch (error: any) {
-    console.error("cf generate error:", error?.message || error);
+    console.error("Fal generate error:", error?.message || error);
 
     return NextResponse.json(
       { error: error?.message || "generation failed" },

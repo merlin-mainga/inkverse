@@ -118,6 +118,7 @@ const paymentMethods: PaymentMethod[] = [
 
 const bankInfo = {
   bankName: "Vietcombank",
+  bankCode: "vietcombank",
   accountNumber: "1234567890",
   accountName: "CONG TY TNHH MAINGA",
   branch: "Chi nhánh TP.HCM",
@@ -183,7 +184,7 @@ export default function PricingPage() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-[#c9a84c] to-[#8b6914] bg-clip-text text-transparent">
-            Bảng Giá
+            Tạo Manga Không Cần Vẽ. Bắt Đầu Từ Hôm Nay.
           </h1>
           <p className="text-lg text-[#f0e6d0]/70 max-w-2xl mx-auto">
             Chọn gói phù hợp với nhu cầu sáng tạo manga của bạn
@@ -267,7 +268,7 @@ export default function PricingPage() {
                       : "bg-[#f0e6d0]/10 hover:bg-[#f0e6d0]/20"
                   }`}
                 >
-                  {plan.id === "free" ? "Bắt đầu miễn phí" : `Chọn ${plan.name}`}
+                  {plan.id === "free" ? "Dùng Thử Miễn Phí →" : plan.id === "starter" ? "Bắt Đầu Sáng Tạo →" : plan.id === "pro" ? "Lên Pro Ngay →" : `Chọn ${plan.name}`}
                 </button>
               </div>
             ))}
@@ -339,10 +340,11 @@ export default function PricingPage() {
                 {selectedPayment.id === "qr" && (
                   <div className="text-center">
                     <div className="bg-white rounded-xl p-6 inline-block mb-6">
-                      {/* Placeholder QR Code */}
-                      <div className="w-48 h-48 bg-[#f0e6d0] rounded-lg flex items-center justify-center">
-                        <QrCode className="w-32 h-32 text-[#080808]" />
-                      </div>
+                      <img
+                        src={`https://img.vietqr.io/image/${bankInfo.bankCode}-${bankInfo.accountNumber}-compact.png?amount=${selectedPlan.price}&addInfo=MAINGA%20${selectedPlan.name.toUpperCase()}&accountName=${encodeURIComponent(bankInfo.accountName)}`}
+                        alt="QR Code thanh toán"
+                        className="w-48 h-48"
+                      />
                     </div>
                     
                     <div className="bg-[#0a0a0a] rounded-xl p-4 space-y-3">
@@ -414,7 +416,7 @@ export default function PricingPage() {
                     </div>
 
                     <a
-                      href="https://momo.me"
+                      href="https://momo.vn"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-block mt-4 px-6 py-3 bg-[#a50064] text-white font-bold rounded-lg hover:bg-[#bf0064] transition-colors"
@@ -437,7 +439,9 @@ export default function PricingPage() {
                     </p>
 
                     <a
-                      href="#"
+                      href="https://vnpay.vn"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-block px-8 py-3 bg-[#004b8d] text-white font-bold rounded-lg hover:bg-[#005aa3] transition-colors"
                     >
                       Thanh toán qua VNPay
@@ -474,7 +478,7 @@ export default function PricingPage() {
               </p>
             </div>
             <div className="bg-[#1a1a1a] rounded-xl p-6 border border-[#f0e6d0]/10">
-              <h3 className="font-bold mb-2">Tôi có thể hủy gói không?</h3>
+              <h3 className="font-bold mb-2">Bạn có thể hủy gói không?</h3>
               <p className="text-sm text-[#f0e6d0]/60">
                 Bạn có thể hủy gói bất kỳ lúc nào. Gói sẽ được duy trì đến cuối chu kỳ thanh toán.
               </p>
@@ -482,7 +486,7 @@ export default function PricingPage() {
             <div className="bg-[#1a1a1a] rounded-xl p-6 border border-[#f0e6d0]/10">
               <h3 className="font-bold mb-2">Làm sao để được hoàn tiền?</h3>
               <p className="text-sm text-[#f0e6d0]/60">
-                Liên hệ support@mainga.vn trong vòng 7 ngày nếu bạn không hài lòng với dịch vụ.
+                Liên hệ support@mainga.vn trong vòng 7 ngày nếu bạn không hài lòng với dịch vụ. Chúng tôi sẽ hoàn tiền nhanh chóng.
               </p>
             </div>
             <div className="bg-[#1a1a1a] rounded-xl p-6 border border-[#f0e6d0]/10">

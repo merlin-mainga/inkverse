@@ -1,12 +1,5 @@
 {
   "pages": {
-    "/api/analyze-style/route": [
-      "static/chunks/webpack-da2f3b3d3d8f101e.js",
-      "static/chunks/4bd1b696-77f656a3ec312b56.js",
-      "static/chunks/1684-a07bb87a7f7d9c52.js",
-      "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/analyze-style/route-a267a76f3bdb9855.js"
-    ],
     "/api/analyze-manga-prompt/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
@@ -14,12 +7,19 @@
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/analyze-manga-prompt/route-dca1202b9b4073c1.js"
     ],
-    "/api/auth/register/route": [
+    "/api/analyze-scene/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/auth/register/route-1a34681d311869bb.js"
+      "static/chunks/app/api/analyze-scene/route-b7e300cf901dbeb4.js"
+    ],
+    "/api/analyze-style/route": [
+      "static/chunks/webpack-da2f3b3d3d8f101e.js",
+      "static/chunks/4bd1b696-77f656a3ec312b56.js",
+      "static/chunks/1684-a07bb87a7f7d9c52.js",
+      "static/chunks/main-app-800f9c4d1b43cfbb.js",
+      "static/chunks/app/api/analyze-style/route-a267a76f3bdb9855.js"
     ],
     "/api/auth/[...nextauth]/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
@@ -28,12 +28,12 @@
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/auth/[...nextauth]/route-85a2922af02157da.js"
     ],
-    "/api/chapters/[chapterId]/route": [
+    "/api/auth/register/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/chapters/[chapterId]/route-b4ce742bf7942ef6.js"
+      "static/chunks/app/api/auth/register/route-1a34681d311869bb.js"
     ],
     "/api/become-author/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
@@ -42,19 +42,19 @@
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/become-author/route-06f9a137b501352b.js"
     ],
+    "/api/chapters/[chapterId]/route": [
+      "static/chunks/webpack-da2f3b3d3d8f101e.js",
+      "static/chunks/4bd1b696-77f656a3ec312b56.js",
+      "static/chunks/1684-a07bb87a7f7d9c52.js",
+      "static/chunks/main-app-800f9c4d1b43cfbb.js",
+      "static/chunks/app/api/chapters/[chapterId]/route-b4ce742bf7942ef6.js"
+    ],
     "/api/compile-manga-prompt/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/compile-manga-prompt/route-d0806c02c7715f88.js"
-    ],
-    "/api/analyze-scene/route": [
-      "static/chunks/webpack-da2f3b3d3d8f101e.js",
-      "static/chunks/4bd1b696-77f656a3ec312b56.js",
-      "static/chunks/1684-a07bb87a7f7d9c52.js",
-      "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/analyze-scene/route-b7e300cf901dbeb4.js"
     ],
     "/api/follow/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
@@ -70,47 +70,12 @@
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/generate-manga-cf/route-795bb904699be60d.js"
     ],
-    "/api/mainga-lab/characters/[id]/route": [
-      "static/chunks/webpack-da2f3b3d3d8f101e.js",
-      "static/chunks/4bd1b696-77f656a3ec312b56.js",
-      "static/chunks/1684-a07bb87a7f7d9c52.js",
-      "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/mainga-lab/characters/[id]/route-91c05ad07df80d38.js"
-    ],
     "/api/generate-manga/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/generate-manga/route-3de0273769df4b89.js"
-    ],
-    "/api/mainga-lab/characters/from-image/route": [
-      "static/chunks/webpack-da2f3b3d3d8f101e.js",
-      "static/chunks/4bd1b696-77f656a3ec312b56.js",
-      "static/chunks/1684-a07bb87a7f7d9c52.js",
-      "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/mainga-lab/characters/from-image/route-24bd831b75a45c95.js"
-    ],
-    "/api/enhance-manga-cf/route": [
-      "static/chunks/webpack-da2f3b3d3d8f101e.js",
-      "static/chunks/4bd1b696-77f656a3ec312b56.js",
-      "static/chunks/1684-a07bb87a7f7d9c52.js",
-      "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/enhance-manga-cf/route-88313a48cea4c3b7.js"
-    ],
-    "/api/history/route": [
-      "static/chunks/webpack-da2f3b3d3d8f101e.js",
-      "static/chunks/4bd1b696-77f656a3ec312b56.js",
-      "static/chunks/1684-a07bb87a7f7d9c52.js",
-      "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/history/route-7dac1306599a8cb3.js"
-    ],
-    "/api/mainga-lab/characters/route": [
-      "static/chunks/webpack-da2f3b3d3d8f101e.js",
-      "static/chunks/4bd1b696-77f656a3ec312b56.js",
-      "static/chunks/1684-a07bb87a7f7d9c52.js",
-      "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/mainga-lab/characters/route-5246b07b374f527f.js"
     ],
     "/api/generate-with-character/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
@@ -119,12 +84,33 @@
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/generate-with-character/route-40570a6cc362f669.js"
     ],
-    "/api/mana/status/route": [
+    "/api/history/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/mana/status/route-81ccf7f041a6dc04.js"
+      "static/chunks/app/api/history/route-7dac1306599a8cb3.js"
+    ],
+    "/api/mainga-lab/characters/[id]/route": [
+      "static/chunks/webpack-da2f3b3d3d8f101e.js",
+      "static/chunks/4bd1b696-77f656a3ec312b56.js",
+      "static/chunks/1684-a07bb87a7f7d9c52.js",
+      "static/chunks/main-app-800f9c4d1b43cfbb.js",
+      "static/chunks/app/api/mainga-lab/characters/[id]/route-91c05ad07df80d38.js"
+    ],
+    "/api/mainga-lab/characters/from-image/route": [
+      "static/chunks/webpack-da2f3b3d3d8f101e.js",
+      "static/chunks/4bd1b696-77f656a3ec312b56.js",
+      "static/chunks/1684-a07bb87a7f7d9c52.js",
+      "static/chunks/main-app-800f9c4d1b43cfbb.js",
+      "static/chunks/app/api/mainga-lab/characters/from-image/route-24bd831b75a45c95.js"
+    ],
+    "/api/mainga-lab/characters/route": [
+      "static/chunks/webpack-da2f3b3d3d8f101e.js",
+      "static/chunks/4bd1b696-77f656a3ec312b56.js",
+      "static/chunks/1684-a07bb87a7f7d9c52.js",
+      "static/chunks/main-app-800f9c4d1b43cfbb.js",
+      "static/chunks/app/api/mainga-lab/characters/route-5246b07b374f527f.js"
     ],
     "/api/mana/deduct/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
@@ -132,6 +118,20 @@
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/mana/deduct/route-def560ef5bd4ebc9.js"
+    ],
+    "/api/mana/status/route": [
+      "static/chunks/webpack-da2f3b3d3d8f101e.js",
+      "static/chunks/4bd1b696-77f656a3ec312b56.js",
+      "static/chunks/1684-a07bb87a7f7d9c52.js",
+      "static/chunks/main-app-800f9c4d1b43cfbb.js",
+      "static/chunks/app/api/mana/status/route-81ccf7f041a6dc04.js"
+    ],
+    "/api/manga/[id]/chapters/route": [
+      "static/chunks/webpack-da2f3b3d3d8f101e.js",
+      "static/chunks/4bd1b696-77f656a3ec312b56.js",
+      "static/chunks/1684-a07bb87a7f7d9c52.js",
+      "static/chunks/main-app-800f9c4d1b43cfbb.js",
+      "static/chunks/app/api/manga/[id]/chapters/route-5d61ca0e4ef01c38.js"
     ],
     "/api/manga/[id]/comments/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
@@ -147,12 +147,19 @@
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/manga/[id]/follow/route-1644c1ac856acf84.js"
     ],
-    "/api/manga/[id]/chapters/route": [
+    "/api/manga/[id]/ratings/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/manga/[id]/chapters/route-5d61ca0e4ef01c38.js"
+      "static/chunks/app/api/manga/[id]/ratings/route-d57d7b58422485cf.js"
+    ],
+    "/api/manga/[id]/read-history/route": [
+      "static/chunks/webpack-da2f3b3d3d8f101e.js",
+      "static/chunks/4bd1b696-77f656a3ec312b56.js",
+      "static/chunks/1684-a07bb87a7f7d9c52.js",
+      "static/chunks/main-app-800f9c4d1b43cfbb.js",
+      "static/chunks/app/api/manga/[id]/read-history/route-b0cb9092e631763e.js"
     ],
     "/api/manga/[id]/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
@@ -161,13 +168,6 @@
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/manga/[id]/route-15c6dcf05e7dedd7.js"
     ],
-    "/api/manga/[id]/ratings/route": [
-      "static/chunks/webpack-da2f3b3d3d8f101e.js",
-      "static/chunks/4bd1b696-77f656a3ec312b56.js",
-      "static/chunks/1684-a07bb87a7f7d9c52.js",
-      "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/manga/[id]/ratings/route-d57d7b58422485cf.js"
-    ],
     "/api/manga/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
@@ -175,12 +175,12 @@
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/manga/route-975a1e7fb115bac9.js"
     ],
-    "/api/manga/[id]/read-history/route": [
+    "/api/enhance-manga-cf/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/manga/[id]/read-history/route-b0cb9092e631763e.js"
+      "static/chunks/app/api/enhance-manga-cf/route-88313a48cea4c3b7.js"
     ],
     "/api/me/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
@@ -196,19 +196,19 @@
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/manga/[id]/chapter/[chapterId]/view/route-3a7028ccaa3be19e.js"
     ],
-    "/api/ping/route": [
-      "static/chunks/webpack-da2f3b3d3d8f101e.js",
-      "static/chunks/4bd1b696-77f656a3ec312b56.js",
-      "static/chunks/1684-a07bb87a7f7d9c52.js",
-      "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/api/ping/route-b64356cf6d82bebd.js"
-    ],
     "/api/stats/route": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/app/api/stats/route-d74ecbac8d635105.js"
+    ],
+    "/api/ping/route": [
+      "static/chunks/webpack-da2f3b3d3d8f101e.js",
+      "static/chunks/4bd1b696-77f656a3ec312b56.js",
+      "static/chunks/1684-a07bb87a7f7d9c52.js",
+      "static/chunks/main-app-800f9c4d1b43cfbb.js",
+      "static/chunks/app/api/ping/route-b64356cf6d82bebd.js"
     ],
     "/not-found": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
@@ -249,13 +249,13 @@
       "static/chunks/2108-00660554228ac836.js",
       "static/chunks/app/become-author/page-da6ae01e6fb5dd10.js"
     ],
-    "/manga/[id]/page": [
+    "/manga/[id]/chapter/[chapterId]/page": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/2108-00660554228ac836.js",
-      "static/chunks/app/manga/[id]/page-3a12ad82e34ba63d.js"
+      "static/chunks/app/manga/[id]/chapter/[chapterId]/page-bbc992950d9fe9e7.js"
     ],
     "/login/page": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
@@ -265,13 +265,20 @@
       "static/chunks/2108-00660554228ac836.js",
       "static/chunks/app/login/page-285e1e9e0c6afd85.js"
     ],
-    "/manga/[id]/chapter/[chapterId]/page": [
+    "/manga/[id]/page": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
       "static/chunks/2108-00660554228ac836.js",
-      "static/chunks/app/manga/[id]/chapter/[chapterId]/page-bbc992950d9fe9e7.js"
+      "static/chunks/app/manga/[id]/page-3a12ad82e34ba63d.js"
+    ],
+    "/pricing/page": [
+      "static/chunks/webpack-da2f3b3d3d8f101e.js",
+      "static/chunks/4bd1b696-77f656a3ec312b56.js",
+      "static/chunks/1684-a07bb87a7f7d9c52.js",
+      "static/chunks/main-app-800f9c4d1b43cfbb.js",
+      "static/chunks/app/pricing/page-b8b75ff1312b1122.js"
     ],
     "/profile/page": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",
@@ -285,7 +292,7 @@
       "static/chunks/4bd1b696-77f656a3ec312b56.js",
       "static/chunks/1684-a07bb87a7f7d9c52.js",
       "static/chunks/main-app-800f9c4d1b43cfbb.js",
-      "static/chunks/app/dashboard/page-c1e244697cea643c.js"
+      "static/chunks/app/dashboard/page-7a287a64c6333c79.js"
     ],
     "/page": [
       "static/chunks/webpack-da2f3b3d3d8f101e.js",

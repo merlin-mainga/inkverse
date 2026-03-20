@@ -1,16 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Wand2, ImageIcon, Zap, Shield, Check, CreditCard, RefreshCw, Headphones, ChevronDown } from "lucide-react";
+import PaymentModal from "@/components/PaymentModal";
 
 interface PricingTier {
   name: string;
+  tierKey: "FREE" | "STARTER" | "PRO" | "MAX";
   tagline: string;
   subtext?: string;
   monthlyUsd: string;
   yearlyUsd: string;
   monthlyVnd: string;
   yearlyVnd: string;
+  monthlyAmount: number;
+  yearlyAmount: number;
   features: string[];
   cta: string;
   popular?: boolean;
@@ -21,12 +27,15 @@ interface PricingTier {
 const pricingTiers: PricingTier[] = [
   {
     name: "FREE",
+    tierKey: "FREE",
     tagline: "Dành cho người mới bắt đầu khám phá.",
     subtext: "50 Mana mỗi tháng • Không cần thẻ",
     monthlyUsd: "Miễn phí",
     yearlyUsd: "Miễn phí",
     monthlyVnd: "0đ",
     yearlyVnd: "0đ",
+    monthlyAmount: 0,
+    yearlyAmount: 0,
     cta: "Bắt Đầu Miễn Phí",
     features: [
       "50 Mana mỗi tháng",
@@ -36,12 +45,15 @@ const pricingTiers: PricingTier[] = [
   },
   {
     name: "STARTER",
+    tierKey: "STARTER",
     tagline: "Thử tạo nhân vật đầu tiên — không cam kết gì cả.",
     subtext: "Không cần thẻ tín dụng • 1 click là xong",
     monthlyUsd: "$1.59",
     yearlyUsd: "$1.29",
     monthlyVnd: "39,000đ",
     yearlyVnd: "31,000đ",
+    monthlyAmount: 39000,
+    yearlyAmount: 31000,
     cta: "Dùng Thử Miễn Phí →",
     features: [
       "Tạo ảnh manga cơ bản bằng AI",
@@ -51,12 +63,15 @@ const pricingTiers: PricingTier[] = [
   },
   {
     name: "PRO",
+    tierKey: "PRO",
     tagline: "Đây là lúc nhân vật của bạn thật sự là của bạn.",
     subtext: "Bước ngoặt từ thử chơi sang thật sự viết truyện",
     monthlyUsd: "$3.99",
     yearlyUsd: "$3.19",
     monthlyVnd: "99,000đ",
     yearlyVnd: "79,000đ",
+    monthlyAmount: 99000,
+    yearlyAmount: 79000,
     popular: true,
     badge: "Phổ biến nhất",
     cta: "Bắt Đầu Sáng Tạo →",
@@ -69,12 +84,15 @@ const pricingTiers: PricingTier[] = [
   },
   {
     name: "MAX",
+    tierKey: "MAX",
     tagline: "Nếu bạn nghiêm túc với việc viết manga — đây là gear của pro.",
     subtext: "Cho những ai không chỉ thích đọc manga",
     monthlyUsd: "$7.99",
     yearlyUsd: "$6.39",
     monthlyVnd: "199,000đ",
     yearlyVnd: "159,000đ",
+    monthlyAmount: 199000,
+    yearlyAmount: 159000,
     exclusive: true,
     badge: "Exclusive",
     cta: "Lên Pro Ngay →",
@@ -105,7 +123,7 @@ const faqs = [
   },
   {
     question: "Thanh toán bằng gì?",
-    answer: "Visa, Mastercard, ATM nội địa, và Ví điện tử (Momo, ZaloPay). Thanh toán qua Stripe — an toàn, bảo mật.",
+    answer: "Chuyển khoản ngân hàng, quét mã QR qua SePay. An toàn, nhanh chóng, không cần thẻ.",
   },
   {
     question: "Generate hình mất bao lâu?",
@@ -117,7 +135,7 @@ const trustSignals = [
   {
     icon: Shield,
     title: "Thanh toán bảo mật",
-    description: "Mã hóa 256-bit • Stripe",
+    description: "Mã hóa 256-bit • SePay",
   },
   {
     icon: RefreshCw,
@@ -132,8 +150,33 @@ const trustSignals = [
 ];
 
 export default function PricingPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [isYearly, setIsYearly] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<"STARTER" | "PRO" | "MAX">("PRO");
+  const [selectedAmount, setSelectedAmount] = useState(99000);
+
+  const handleCTAClick = (tier: PricingTier) => {
+    // Free tier - redirect to register/login
+    if (tier.tierKey === "FREE") {
+      if (!session) {
+        router.push("/login");
+      } else {
+        router.push("/dashboard");
+      }
+      return;
+    }
+
+    // Paid tiers - open payment modal
+    const amount = isYearly ? tier.yearlyAmount : tier.monthlyAmount;
+    setSelectedTier(tier.tierKey as "STARTER" | "PRO" | "MAX");
+    setSelectedAmount(amount);
+    setShowPaymentModal(true);
+  };
 
   return (
     <div
@@ -297,7 +340,7 @@ export default function PricingPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
+            gridTemplateColumns: "repeat(4, 1fr)",
             gap: 20,
             marginBottom: 60,
           }}
@@ -491,6 +534,7 @@ export default function PricingPage() {
 
               {/* CTA Button */}
               <button
+                onClick={() => handleCTAClick(tier)}
                 style={{
                   display: "block",
                   width: "100%",
@@ -711,6 +755,14 @@ export default function PricingPage() {
           </p>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        tier={selectedTier}
+        amount={selectedAmount}
+      />
     </div>
   );
 }

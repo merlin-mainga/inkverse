@@ -46,10 +46,7 @@ Return STRICT JSON only.
     const result: any = await fal.subscribe("fal-ai/any-llm", {
       input: {
         model: "google/gemini-flash-1.5",
-        prompt: [fullPrompt],
-        response_format: RESPONSE_FORMAT,
-        max_tokens: 400,
-        temperature: 0.2
+        prompt: fullPrompt,
       },
     });
 

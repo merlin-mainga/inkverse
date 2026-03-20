@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+import fal from "@/lib/fal";
 
 const RESPONSE_FORMAT = {
   type: "json_schema",
@@ -52,14 +51,6 @@ const RESPONSE_FORMAT = {
     ],
   },
 };
-
-function getErrorMessage(data: any) {
-  return data?.errors?.[0]?.message || data?.result?.error || "";
-}
-
-function isTransportError(data: any) {
-  return getErrorMessage(data).toLowerCase().includes("transport error");
-}
 
 async function callSceneAnalyzer(prompt: string, outputIntent?: string, characterCanon?: any) {
   const safeIntent =
@@ -137,51 +128,43 @@ ${characterCanon ? "\nIMPORTANT: The scene MUST feature the provided character w
 Return STRICT JSON only.
 `.trim();
 
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${MODEL}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt: `${instruction}\n\nUSER PROMPT:\n${prompt.trim()}`,
-        response_format: RESPONSE_FORMAT,
-        max_tokens: 700,
-        temperature: 0.12,
-      }),
-    }
-  );
+  const fullPrompt = `${instruction}\n\nUSER PROMPT:\n${prompt.trim()}`;
 
-  const data = await res.json();
-  return { res, data };
+  const result: any = await fal.subscribe("fal-ai/any-llm", {
+    input: {
+      model: "google/gemini-flash-1-5",
+      prompt: [fullPrompt],
+      response_format: RESPONSE_FORMAT,
+      max_tokens: 700,
+      temperature: 0.12,
+    },
+  });
+
+  return result?.data?.output;
 }
 
 async function callSceneAnalyzerWithRetry(prompt: string, outputIntent?: string, characterCanon?: any) {
   let lastData: any = null;
-  let lastStatus = 500;
 
   for (let attempt = 0; attempt < 3; attempt++) {
-    const { res, data } = await callSceneAnalyzer(prompt, outputIntent, characterCanon);
-    lastData = data;
-    lastStatus = res.status;
+    try {
+      const data = await callSceneAnalyzer(prompt, outputIntent, characterCanon);
+      lastData = data;
 
-    if (res.ok) {
-      return { res, data };
+      if (data && typeof data === "object" && data.scene_prompt) {
+        return { ok: true, data };
+      }
+    } catch (err) {
+      console.error(`analyze-scene attempt ${attempt + 1} failed:`, err);
+      lastData = { error: err };
     }
 
-    if (!isTransportError(data)) {
-      return { res, data };
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
     }
-
-    await new Promise((resolve) => setTimeout(resolve, 1200));
   }
 
-  return {
-    res: { ok: false, status: lastStatus },
-    data: lastData,
-  };
+  return { ok: false, data: lastData };
 }
 
 export async function POST(req: NextRequest) {
@@ -195,17 +178,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { res, data } = await callSceneAnalyzerWithRetry(prompt, output_intent, character_canon);
+    const { ok, data } = await callSceneAnalyzerWithRetry(prompt, output_intent, character_canon);
 
-    if (!res.ok) {
+    if (!ok || !data) {
       console.error("analyze-scene error:", data);
       return NextResponse.json(
-        { error: getErrorMessage(data) || "Analyze scene failed." },
-        { status: typeof res.status === "number" ? res.status : 500 }
+        { error: "Analyze scene failed." },
+        { status: 500 }
       );
     }
 
-    const parsed = data?.result?.response || data?.response || null;
+    const parsed = data;
 
     if (!parsed || typeof parsed !== "object" || !parsed.scene_prompt) {
       console.error("Invalid scene output:", data);

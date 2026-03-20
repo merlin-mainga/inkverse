@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+import fal from "@/lib/fal";
 
 const RESPONSE_FORMAT = {
   type: "json_schema",
@@ -35,14 +34,6 @@ const RESPONSE_FORMAT = {
   },
 };
 
-function getErrorMessage(data: any) {
-  return data?.errors?.[0]?.message || data?.result?.error || "";
-}
-
-function isTransportError(data: any) {
-  return getErrorMessage(data).toLowerCase().includes("transport error");
-}
-
 async function callStyleAnalyzer(style: string) {
   const safeStyle =
     typeof style === "string" && style.trim()
@@ -73,68 +64,60 @@ Rules:
 - Return STRICT JSON only.
 `.trim();
 
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${MODEL}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt: `${instruction}\n\nUSER STYLE:\n${safeStyle}`,
-        response_format: RESPONSE_FORMAT,
-        max_tokens: 600,
-        temperature: 0.15,
-      }),
-    }
-  );
+  const fullPrompt = `${instruction}\n\nUSER STYLE:\n${safeStyle}`;
 
-  const data = await res.json();
-  return { res, data };
+  const result: any = await fal.subscribe("fal-ai/any-llm", {
+    input: {
+      model: "google/gemini-flash-1-5",
+      prompt: [fullPrompt],
+      response_format: RESPONSE_FORMAT,
+      max_tokens: 600,
+      temperature: 0.15,
+    },
+  });
+
+  return result?.data?.output;
 }
 
 async function callStyleAnalyzerWithRetry(style: string) {
   let lastData: any = null;
-  let lastStatus = 500;
 
   for (let attempt = 0; attempt < 3; attempt++) {
-    const { res, data } = await callStyleAnalyzer(style);
-    lastData = data;
-    lastStatus = res.status;
+    try {
+      const data = await callStyleAnalyzer(style);
+      lastData = data;
 
-    if (res.ok) {
-      return { res, data };
+      if (data && typeof data === "object" && data.style_prompt) {
+        return { ok: true, data };
+      }
+    } catch (err) {
+      console.error(`analyze-style attempt ${attempt + 1} failed:`, err);
+      lastData = { error: err };
     }
 
-    if (!isTransportError(data)) {
-      return { res, data };
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
     }
-
-    await new Promise((resolve) => setTimeout(resolve, 1200));
   }
 
-  return {
-    res: { ok: false, status: lastStatus },
-    data: lastData,
-  };
+  return { ok: false, data: lastData };
 }
 
 export async function POST(req: NextRequest) {
   try {
     const { style } = await req.json();
 
-    const { res, data } = await callStyleAnalyzerWithRetry(style);
+    const { ok, data } = await callStyleAnalyzerWithRetry(style);
 
-    if (!res.ok) {
+    if (!ok || !data) {
       console.error("analyze-style error:", data);
       return NextResponse.json(
-        { error: getErrorMessage(data) || "Analyze style failed." },
-        { status: typeof res.status === "number" ? res.status : 500 }
+        { error: "Analyze style failed." },
+        { status: 500 }
       );
     }
 
-    const parsed = data?.result?.response || data?.response || null;
+    const parsed = data;
 
     if (!parsed || typeof parsed !== "object" || !parsed.style_prompt) {
       console.error("Invalid style output:", data);

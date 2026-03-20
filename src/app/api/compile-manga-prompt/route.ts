@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+import fal from "@/lib/fal";
 
 const RESPONSE_FORMAT = {
   type: "json_schema",
@@ -38,14 +37,6 @@ type OutputIntent =
   | "action-scene"
   | "dialogue-scene"
   | "environment";
-
-function getErrorMessage(data: any) {
-  return data?.errors?.[0]?.message || data?.result?.error || "";
-}
-
-function isTransportError(data: any) {
-  return getErrorMessage(data).toLowerCase().includes("transport error");
-}
 
 function normalizeOutputIntent(value: unknown): OutputIntent | null {
   if (
@@ -272,25 +263,19 @@ CHARACTER CANON (MUST USE):
 ${JSON.stringify(characterCanon, null, 2)}` : ""}
 `.trim();
 
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${MODEL}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt: `${instruction}\n\n${payload}`,
-        response_format: RESPONSE_FORMAT,
-        max_tokens: 1100,
-        temperature: 0.06,
-      }),
-    }
-  );
+  const fullPrompt = `${instruction}\n\n${payload}`;
 
-  const data = await res.json();
-  return { res, data, outputIntent, wantsMonochrome, negativeColor };
+  const result: any = await fal.subscribe("fal-ai/any-llm", {
+    input: {
+      model: "google/gemini-flash-1-5",
+      prompt: [fullPrompt],
+      response_format: RESPONSE_FORMAT,
+      max_tokens: 1100,
+      temperature: 0.06,
+    },
+  });
+
+  return { data: result?.data?.output, outputIntent, wantsMonochrome, negativeColor };
 }
 
 async function callCompilerWithRetry(
@@ -300,7 +285,6 @@ async function callCompilerWithRetry(
   characterCanon?: any
 ) {
   let lastData: any = null;
-  let lastStatus = 500;
   let lastMeta: {
     outputIntent?: OutputIntent;
     wantsMonochrome?: boolean;
@@ -308,29 +292,27 @@ async function callCompilerWithRetry(
   } = {};
 
   for (let attempt = 0; attempt < 3; attempt++) {
-    const { res, data, outputIntent, wantsMonochrome, negativeColor } =
-      await callCompiler(scene, style, outputIntentFromBody, characterCanon);
+    try {
+      const { data, outputIntent, wantsMonochrome, negativeColor } =
+        await callCompiler(scene, style, outputIntentFromBody, characterCanon);
 
-    lastData = data;
-    lastStatus = res.status;
-    lastMeta = { outputIntent, wantsMonochrome, negativeColor };
+      lastData = data;
+      lastMeta = { outputIntent, wantsMonochrome, negativeColor };
 
-    if (res.ok) {
-      return { res, data, ...lastMeta };
+      if (data && typeof data === "object" && data.scene_prompt) {
+        return { ok: true, data, ...lastMeta };
+      }
+    } catch (err) {
+      console.error(`compile attempt ${attempt + 1} failed:`, err);
+      lastData = { error: err };
     }
 
-    if (!isTransportError(data)) {
-      return { res, data, ...lastMeta };
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
     }
-
-    await new Promise((resolve) => setTimeout(resolve, 1200));
   }
 
-  return {
-    res: { ok: false, status: lastStatus },
-    data: lastData,
-    ...lastMeta,
-  };
+  return { ok: false, data: lastData, ...lastMeta };
 }
 
 function isValidCompiledOutput(parsed: any) {
@@ -379,18 +361,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { res, data, outputIntent, wantsMonochrome, negativeColor } =
+    const { ok, data, outputIntent, wantsMonochrome, negativeColor } =
       await callCompilerWithRetry(scene, style, output_intent, character_canon);
 
-    if (!res.ok) {
+    if (!ok || !data) {
       console.error("compile-prompt error:", data);
       return NextResponse.json(
-        { error: getErrorMessage(data) || "Compile prompt failed." },
-        { status: typeof res.status === "number" ? res.status : 500 }
+        { error: "Compile prompt failed." },
+        { status: 500 }
       );
     }
 
-    const parsed = data?.result?.response || data?.response || null;
+    const parsed = data;
 
     if (!isValidCompiledOutput(parsed)) {
       console.error("Invalid compiler output:", data);

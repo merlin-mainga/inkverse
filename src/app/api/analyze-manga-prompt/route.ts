@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const ANALYZE_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+import fal from "@/lib/fal";
 
 const RESPONSE_FORMAT = {
   type: "json_schema",
@@ -42,39 +41,22 @@ Focus on manga rendering style, ink quality, shading and mood.
 Return STRICT JSON only.
 `.trim();
 
-    const res = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${ANALYZE_MODEL}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          prompt: `${instruction}\n\nUser prompt: ${prompt}`,
-          response_format: RESPONSE_FORMAT,
-          max_tokens: 400,
-          temperature: 0.2
-        })
-      }
-    );
+    const fullPrompt = `${instruction}\n\nUser prompt: ${prompt}`;
 
-    const data = await res.json();
+    const result: any = await fal.subscribe("fal-ai/any-llm", {
+      input: {
+        model: "google/gemini-flash-1-5",
+        prompt: [fullPrompt],
+        response_format: RESPONSE_FORMAT,
+        max_tokens: 400,
+        temperature: 0.2
+      },
+    });
 
-    if (!res.ok) {
-      console.error("analyze error:", data);
-      return NextResponse.json(
-        { error: data?.errors?.[0]?.message || "Analyze failed." },
-        { status: res.status }
-      );
-    }
-
-    const parsed =
-      data?.result?.response ||
-      data?.response ||
-      null;
+    const parsed = result?.data?.output;
 
     if (!parsed || !parsed.scene_prompt) {
+      console.error("Invalid analyze output:", result);
       return NextResponse.json(
         { error: "Invalid analyze output." },
         { status: 500 }

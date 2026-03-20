@@ -35,6 +35,7 @@ model User {
   readHistory      ReadHistory[]
   sessions         Session[]
   characters       CharacterProfile[]
+  paymentOrders    PaymentOrder[]
 }
 
 model CharacterProfile {
@@ -177,4 +178,22 @@ model ReadHistory {
   chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@unique([userId, mangaId])
+}
+
+model PaymentOrder {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  tier          String
+  amount        Int
+  status        String   @default("pending")
+  sepayOrderId  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PaymentTransaction {
+  id            String   @id @default(uuid())
+  transactionId String   @unique
+  processedAt   DateTime @default(now())
 }

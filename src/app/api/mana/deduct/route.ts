@@ -45,10 +45,10 @@ export async function POST(req: NextRequest) {
     if (shouldReset) {
       // Reset mana based on tier
       const manaByTier: Record<string, number> = {
-        FREE: 10,
-        STARTER: 100,
-        PRO: 300,
-        MAX: 800,
+        FREE: 50,
+        STARTER: 500,
+        PRO: 1500,
+        MAX: 3500,
       };
 
       const tierMana = manaByTier[user.subscriptionTier] || 10;

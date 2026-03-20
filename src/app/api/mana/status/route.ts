@@ -5,10 +5,10 @@ import { prisma } from "@/lib/prisma";
 
 // Mana allocation by tier
 const MANA_BY_TIER: Record<string, number> = {
-  FREE: 10,
-  STARTER: 100,
-  PRO: 300,
-  MAX: 800,
+  FREE: 50,
+  STARTER: 500,
+  PRO: 1500,
+  MAX: 3500,
 };
 
 export async function GET() {

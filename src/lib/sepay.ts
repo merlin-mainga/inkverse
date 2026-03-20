@@ -68,24 +68,41 @@ export async function createSePayOrder(
     throw new Error("SEPAY_API_KEY is not configured");
   }
 
-  const response = await fetch(
-    `${SEPAY_API_URL}/${SEPAY_API_VERSION}/orders`,
-    {
+  const url = `${SEPAY_API_URL}/${SEPAY_API_VERSION}/orders`;
+  console.log("[SePay] Creating order:", {
+    url,
+    account_number: params.account_number,
+    amount: params.amount,
+    hasApiKey: !!apiKey,
+  });
+
+  try {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(params),
+    });
+
+    console.log("[SePay] Response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[SePay] Error response:", errorText);
+      const error: SePayError = JSON.parse(errorText);
+      throw new Error(`SePay API Error: ${error.message || response.statusText}`);
     }
-  );
 
-  if (!response.ok) {
-    const error: SePayError = await response.json();
-    throw new Error(`SePay API Error: ${error.message || response.statusText}`);
+    const data = await response.json();
+    console.log("[SePay] Success:", data);
+
+    return data;
+  } catch (err: any) {
+    console.error("[SePay] Fetch failed:", err.message);
+    throw err;
   }
-
-  return response.json();
 }
 
 /**

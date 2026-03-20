@@ -66,7 +66,11 @@ export async function POST(req: NextRequest) {
     // Note: SePay account_number should be configured in env or retrieved from API
     const sepayAccountNumber = process.env.SEPAY_ACCOUNT_NUMBER || "";
     
+    console.log("[create-order] SEPAY_ACCOUNT_NUMBER:", sepayAccountNumber ? "***" : "MISSING");
+    console.log("[create-order] SEPAY_API_KEY:", process.env.SEPAY_API_KEY ? "***" : "MISSING");
+    
     if (!sepayAccountNumber) {
+      console.error("[create-order] SEPAY_ACCOUNT_NUMBER is empty");
       return NextResponse.json(
         { error: "Payment gateway not configured" },
         { status: 500 }

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import CoverImage from "@/components/CoverImage";
 import CoverEditor from "@/components/CoverEditor";
 import CharacterDetailModal from "@/components/CharacterDetailModal";
-import MaingaLabUpgradeBanner from "@/components/MaingaLabUpgradeBanner";
+import UpgradeModal from "@/components/UpgradeModal";
 
 const GENRES = [
   "Action",
@@ -158,7 +158,7 @@ export default function DashboardPage() {
   const [labCharacters, setLabCharacters] = useState<CharacterProfile[]>([]);
   const [labLoading, setLabLoading] = useState(false);
   const [labError, setLabError] = useState("");
-  const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterProfile | null>(null);
   const [showCreateCharacterCanon, setShowCreateCharacterCanon] = useState(false);
 const [characterCanonCreateMode, setCharacterCanonCreateMode] = useState<"text" | "image">("text");
@@ -299,7 +299,7 @@ useEffect(() => {
 async function fetchLabCharacters() {
   setLabLoading(true);
   setLabError("");
-  setShowUpgradeBanner(false);
+  setShowUpgradeModal(false);
 
   try {
     const res = await fetch("/api/mainga-lab/characters", {
@@ -310,7 +310,7 @@ async function fetchLabCharacters() {
 
     if (res.status === 402) {
       setLabCharacters([]);
-      setShowUpgradeBanner(true);
+      setShowUpgradeModal(true);
       setLabLoading(false);
       return;
     }
@@ -389,7 +389,7 @@ async function handleSaveCharacterCanonText() {
     }
 
     if (res.status === 402) {
-      setShowUpgradeBanner(true);
+      setShowUpgradeModal(true);
       setCharacterCanonSaveError("");
       setSavingCharacterCanon(false);
       return;
@@ -440,7 +440,7 @@ async function handleSaveCharacterFromImage() {
     }
 
     if (res.status === 402) {
-      setShowUpgradeBanner(true);
+      setShowUpgradeModal(true);
       setCharacterImageSaveError("");
       setSavingCharacterFromImage(false);
       return;
@@ -2984,7 +2984,7 @@ async function handleSaveCharacterFromImage() {
         gap: 20,
       }}
     >
-      {showUpgradeBanner && <MaingaLabUpgradeBanner />}
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
       <div
         style={{
           background: "rgba(255,255,255,0.02)",

@@ -146,7 +146,7 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                 color: "#ffffff",
               }}
             >
-              129.000đ
+              99.000đ
             </span>
             <span
               style={{
@@ -168,9 +168,9 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
             }}
           >
             {[
-              "MAINGA Lab đầy đủ",
-              "Tạo manga bằng AI",
-              "Hỗ trợ ưu tiên",
+              "1,500 Mana/tháng — đủ 3-5 chapter",
+              "Mainga Lab — tạo Character AI consistent",
+              "Tối đa 5 nhân vật yêu thích",
             ].map((feature, i) => (
               <li
                 key={i}

@@ -5,6 +5,15 @@ import { prisma } from "@/lib/prisma";
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
+  
+  if (process.env.NODE_ENV === "development") {
+    console.log("[Mainga Lab] Session check:", {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userId: (session?.user as any)?.id,
+    });
+  }
+
   const userId = (session?.user as any)?.id;
 
   if (!session || !userId) {

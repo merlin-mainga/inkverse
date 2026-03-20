@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import CoverImage from "@/components/CoverImage";
 import CoverEditor from "@/components/CoverEditor";
 import CharacterDetailModal from "@/components/CharacterDetailModal";
@@ -149,8 +150,61 @@ function DashboardMenuIcon({
 }
 export default function DashboardPage() {
   const router = useRouter();
+  const { data: session } = useSession();
 
-  const [session, setSession] = useState<any>(null);
+  // Refs for Mainga Lab upgrade modal logic
+  const labUpgradeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const labUpgradeShownRef = useRef<boolean>(false);
+  const labUserHasTypedRef = useRef<boolean>(false);
+
+  // Check if user is Pro/Max
+  const isProOrMax = (session?.user as any)?.subscriptionTier === "PRO" || (session?.user as any)?.subscriptionTier === "MAX";
+
+  // Helper: Show upgrade modal with per-session limit
+  const tryShowLabUpgradeModal = useCallback(() => {
+    if (labUpgradeShownRef.current || isProOrMax) return;
+    labUpgradeShownRef.current = true;
+    setShowUpgradeModal(true);
+  }, [isProOrMax]);
+
+  // Cancel 30s timer (called when user starts typing)
+  const cancelLabUpgradeTimer = useCallback(() => {
+    if (labUserHasTypedRef.current) return; // Already cancelled
+    labUserHasTypedRef.current = true;
+    if (labUpgradeTimerRef.current) {
+      clearTimeout(labUpgradeTimerRef.current);
+      labUpgradeTimerRef.current = null;
+    }
+  }, []);
+
+  // Start 30s timer when entering Mainga Lab
+  const startLabUpgradeTimer = useCallback(() => {
+    // Reset refs when entering
+    labUpgradeShownRef.current = false;
+    labUserHasTypedRef.current = false;
+    // Clear any existing timer
+    if (labUpgradeTimerRef.current) {
+      clearTimeout(labUpgradeTimerRef.current);
+    }
+    // Don't start timer for Pro/Max users
+    if (isProOrMax) return;
+    // Start 30s countdown
+    labUpgradeTimerRef.current = setTimeout(() => {
+      tryShowLabUpgradeModal();
+    }, 30000); // 30 seconds
+  }, [isProOrMax, tryShowLabUpgradeModal]);
+
+  // Trigger modal immediately on button click (higher intent)
+  const triggerLabUpgradeOnAction = useCallback(() => {
+    // Cancel timer first
+    if (labUpgradeTimerRef.current) {
+      clearTimeout(labUpgradeTimerRef.current);
+      labUpgradeTimerRef.current = null;
+    }
+    // Show modal
+    tryShowLabUpgradeModal();
+  }, [tryShowLabUpgradeModal]);
+
   const [mangas, setMangas] = useState<MangaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "mangas" | "ai-manga" | "mainga-lab">("overview");
@@ -170,6 +224,13 @@ const [characterCanonTextForm, setCharacterCanonTextForm] = useState({
   avoidDrift: "",
   colorMode: "unspecified" as "monochrome" | "color" | "unspecified",
 });
+
+// Wrapper to cancel upgrade timer when user starts typing
+const updateCharacterCanonTextForm = useCallback((updater: (prev: typeof characterCanonTextForm) => typeof characterCanonTextForm) => {
+  cancelLabUpgradeTimer(); // Cancel timer when user starts typing
+  updateCharacterCanonTextForm(updater);
+}, []);
+
 const [savingCharacterCanon, setSavingCharacterCanon] = useState(false);
 const [characterCanonSaveError, setCharacterCanonSaveError] = useState("");
 const [characterImageName, setCharacterImageName] = useState("");
@@ -273,7 +334,6 @@ const [mangaAiFinalPromptPreview, setMangaAiFinalPromptPreview] = useState("");
           router.push("/");
           return;
         }
-        setSession(s);
         fetchMyMangas();
       });
     });
@@ -282,6 +342,7 @@ const [mangaAiFinalPromptPreview, setMangaAiFinalPromptPreview] = useState("");
 useEffect(() => {
   if (activeTab === "mainga-lab") {
     fetchLabCharacters();
+    startLabUpgradeTimer(); // Start 30s upgrade modal timer
   }
 }, [activeTab]);
   
@@ -310,7 +371,7 @@ async function fetchLabCharacters() {
 
     if (res.status === 402) {
       setLabCharacters([]);
-      setShowUpgradeModal(true);
+      // Don't show modal immediately - wait for user action or 30s timer
       setLabLoading(false);
       return;
     }
@@ -389,7 +450,7 @@ async function handleSaveCharacterCanonText() {
     }
 
     if (res.status === 402) {
-      setShowUpgradeModal(true);
+      triggerLabUpgradeOnAction(); // Show modal on action (user clicked save button)
       setCharacterCanonSaveError("");
       setSavingCharacterCanon(false);
       return;
@@ -440,7 +501,7 @@ async function handleSaveCharacterFromImage() {
     }
 
     if (res.status === 402) {
-      setShowUpgradeModal(true);
+      triggerLabUpgradeOnAction(); // Show modal on action (user clicked create button)
       setCharacterImageSaveError("");
       setSavingCharacterFromImage(false);
       return;
@@ -3186,7 +3247,7 @@ async function handleSaveCharacterFromImage() {
                       placeholder="Ví dụ: Akira Kurose"
                       value={characterCanonTextForm.name}
                       onChange={(e) =>
-                        setCharacterCanonTextForm((prev) => ({
+                        updateCharacterCanonTextForm((prev) => ({
                           ...prev,
                           name: e.target.value,
                         }))
@@ -3211,7 +3272,7 @@ async function handleSaveCharacterFromImage() {
                       placeholder="Tóm tắt ngắn nhưng rõ bản sắc nhân vật, dùng được cho prompt injection."
                       value={characterCanonTextForm.canonSummary}
                       onChange={(e) =>
-                        setCharacterCanonTextForm((prev) => ({
+                        updateCharacterCanonTextForm((prev) => ({
                           ...prev,
                           canonSummary: e.target.value,
                         }))
@@ -3237,7 +3298,7 @@ async function handleSaveCharacterFromImage() {
                       placeholder="Mô tả tóc, mắt, khuôn mặt, silhouette, trang phục, vibe hình thể..."
                       value={characterCanonTextForm.appearanceNotes}
                       onChange={(e) =>
-                        setCharacterCanonTextForm((prev) => ({
+                        updateCharacterCanonTextForm((prev) => ({
                           ...prev,
                           appearanceNotes: e.target.value,
                         }))
@@ -3263,7 +3324,7 @@ async function handleSaveCharacterFromImage() {
                       placeholder="Các trait không được drift: kiểu tóc, mắt, dấu nhận diện, outfit core..."
                       value={characterCanonTextForm.mustPreserve}
                       onChange={(e) =>
-                        setCharacterCanonTextForm((prev) => ({
+                        updateCharacterCanonTextForm((prev) => ({
                           ...prev,
                           mustPreserve: e.target.value,
                         }))
@@ -3289,7 +3350,7 @@ async function handleSaveCharacterFromImage() {
                       placeholder="Những lỗi model hay trôi: đổi màu tóc, sai tuổi, lệch khí chất, sai outfit..."
                       value={characterCanonTextForm.avoidDrift}
                       onChange={(e) =>
-                        setCharacterCanonTextForm((prev) => ({
+                        updateCharacterCanonTextForm((prev) => ({
                           ...prev,
                           avoidDrift: e.target.value,
                         }))
@@ -3322,7 +3383,7 @@ async function handleSaveCharacterFromImage() {
                             key={value}
                             type="button"
                             onClick={() =>
-                              setCharacterCanonTextForm((prev) => ({
+                              updateCharacterCanonTextForm((prev) => ({
                                 ...prev,
                                 colorMode: value as "monochrome" | "color" | "unspecified",
                               }))

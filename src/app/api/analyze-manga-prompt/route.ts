@@ -45,7 +45,7 @@ Return STRICT JSON only.
 
     const result: any = await fal.subscribe("fal-ai/any-llm", {
       input: {
-        model: "google/gemini-flash-1-5",
+        model: "google/gemini-flash-1.5",
         prompt: [fullPrompt],
         response_format: RESPONSE_FORMAT,
         max_tokens: 400,
@@ -53,7 +53,7 @@ Return STRICT JSON only.
       },
     });
 
-    const parsed = result?.data?.output;
+    const parsed = result?.output;
 
     if (!parsed || !parsed.scene_prompt) {
       console.error("Invalid analyze output:", result);

@@ -132,7 +132,7 @@ Return STRICT JSON only.
 
   const result: any = await fal.subscribe("fal-ai/any-llm", {
     input: {
-      model: "google/gemini-flash-1-5",
+      model: "google/gemini-flash-1.5",
       prompt: [fullPrompt],
       response_format: RESPONSE_FORMAT,
       max_tokens: 700,
@@ -140,7 +140,7 @@ Return STRICT JSON only.
     },
   });
 
-  return result?.data?.output;
+  return result?.output;
 }
 
 async function callSceneAnalyzerWithRetry(prompt: string, outputIntent?: string, characterCanon?: any) {

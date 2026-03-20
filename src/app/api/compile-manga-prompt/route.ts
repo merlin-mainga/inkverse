@@ -267,7 +267,7 @@ ${JSON.stringify(characterCanon, null, 2)}` : ""}
 
   const result: any = await fal.subscribe("fal-ai/any-llm", {
     input: {
-      model: "google/gemini-flash-1-5",
+      model: "google/gemini-flash-1.5",
       prompt: [fullPrompt],
       response_format: RESPONSE_FORMAT,
       max_tokens: 1100,
@@ -275,7 +275,7 @@ ${JSON.stringify(characterCanon, null, 2)}` : ""}
     },
   });
 
-  return { data: result?.data?.output, outputIntent, wantsMonochrome, negativeColor };
+  return { data: result?.output, outputIntent, wantsMonochrome, negativeColor };
 }
 
 async function callCompilerWithRetry(

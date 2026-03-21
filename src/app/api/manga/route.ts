@@ -13,8 +13,6 @@ export async function GET(req: NextRequest) {
     const page = Number(searchParams.get("page") || "1");
     const limit = Number(searchParams.get("limit") || "12");
 
-    const session = await getServerSession(authOptions);
-
     const where: any = {};
 
     if (q) {
@@ -31,6 +29,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (mine) {
+      const session = await getServerSession(authOptions);
       if (!session?.user) {
         return NextResponse.json({ mangas: [], total: 0 });
       }

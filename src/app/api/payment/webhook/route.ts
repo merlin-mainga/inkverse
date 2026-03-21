@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parsePaymentDescription } from "@/lib/sepay";
 
+export const dynamic = "force-dynamic";
+
 // Mana amounts for each tier
 const MANA_BY_TIER: Record<string, number> = {
   STARTER: 500,
@@ -29,28 +31,28 @@ const MANA_BY_TIER: Record<string, number> = {
  * }
  */
 export async function POST(req: NextRequest) {
+  // Log IMMEDIATELY — before any async ops that could throw
+  console.log("[webhook] POST received at", new Date().toISOString());
+  console.log("[webhook] Headers:", JSON.stringify(Object.fromEntries(req.headers.entries())));
+
   let rawBody = "";
   try {
     rawBody = await req.text();
-
-    // Log everything for debugging
-    console.log("SePay webhook received");
-    console.log("Headers:", Object.fromEntries(req.headers.entries()));
-    console.log("SePay webhook payload:", rawBody);
+    console.log("[webhook] Body:", rawBody);
 
     // Parse payload
     let payload: any;
     try {
       payload = JSON.parse(rawBody);
     } catch {
-      console.error("SePay webhook: Invalid JSON", rawBody);
+      console.error("[webhook] Invalid JSON:", rawBody);
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
     // Only process incoming transfers
     if (payload.transferType !== "in") {
-      console.log("SePay webhook: Skipping non-incoming transfer", payload.transferType);
-      return NextResponse.json({ success: true, message: "Skipped non-incoming transfer" });
+      console.log("[webhook] Skipping transferType:", payload.transferType);
+      return NextResponse.json({ success: true, message: "Skipped" });
     }
 
     const transactionId = String(payload.id);
@@ -58,7 +60,7 @@ export async function POST(req: NextRequest) {
     // SePay puts matched content in `code`, fallback to `content`
     const transferContent = payload.code || payload.content || "";
 
-    console.log("SePay webhook parsed:", { transactionId, transferAmount, transferContent });
+    console.log("[webhook] Parsed:", { transactionId, transferAmount, transferContent });
 
     if (!transactionId || !transferAmount || !transferContent) {
       console.error("SePay webhook: Missing required fields", payload);
@@ -141,11 +143,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, message: "Payment processed" });
 
   } catch (error: any) {
-    console.error("SePay webhook error:", error, "rawBody:", rawBody);
-    return NextResponse.json(
-      { error: error?.message || "Webhook processing failed" },
-      { status: 500 }
-    );
+    console.error("[webhook] Unhandled error:", error?.message, "body:", rawBody);
+    // Return 200 so SePay doesn't retry endlessly on our internal errors
+    return NextResponse.json({ success: false, error: error?.message || "Internal error" });
   }
 }
 

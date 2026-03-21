@@ -2923,7 +2923,10 @@ async function handleSaveCharacterFromImage() {
                         gap: 16,
                       }}
                     >
-                      {mangaAiImages.map((image, index) => (
+                      {mangaAiImages.map((image, index) => {
+                        const imgSrc = image.startsWith("http") ? image : `data:image/jpeg;base64,${image}`;
+                        console.log(`[MangaAI] Draft ${index + 1} src:`, imgSrc.slice(0, 80));
+                        return (
                         <div
                           key={index}
                           style={{
@@ -2935,7 +2938,7 @@ async function handleSaveCharacterFromImage() {
                           }}
                         >
                           <img
-                            src={image.startsWith("http") ? image : `data:image/jpeg;base64,${image}`}
+                            src={imgSrc}
                             alt={`AI Manga Draft ${index + 1}`}
                             style={{
                               width: "100%",
@@ -2996,7 +2999,8 @@ async function handleSaveCharacterFromImage() {
                             </a>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>

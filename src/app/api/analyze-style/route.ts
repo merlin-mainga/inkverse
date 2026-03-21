@@ -101,15 +101,36 @@ Rules:
   }
 }
 
+function normalizeStyleData(data: any): any {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  // Accept if at least one key style field is present
+  if (!data.visual_mode && !data.style_prompt && !data.lineart) return null;
+  // Auto-build style_prompt from parts if LLM omitted it
+  if (!data.style_prompt) {
+    const parts = [
+      data.visual_mode,
+      data.lineart,
+      data.shading,
+      data.palette,
+      data.lighting,
+      data.texture,
+      data.detail,
+    ].filter((v) => typeof v === "string" && v.trim());
+    data.style_prompt = parts.join(", ") || "manga illustration style";
+  }
+  return data;
+}
+
 async function callStyleAnalyzerWithRetry(style: string) {
   let lastData: any = null;
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const data = await callStyleAnalyzer(style);
-      lastData = data;
+      const raw = await callStyleAnalyzer(style);
+      const data = normalizeStyleData(raw);
+      lastData = data ?? raw;
 
-      if (data && typeof data === "object" && !Array.isArray(data) && data.style_prompt) {
+      if (data) {
         return { ok: true, data };
       }
     } catch (err) {
@@ -142,7 +163,7 @@ export async function POST(req: NextRequest) {
     const parsed = data;
 
     if (!parsed || typeof parsed !== "object" || !parsed.style_prompt) {
-      console.error("Invalid style output:", data);
+      console.error("Invalid style output after normalize:", data);
       return NextResponse.json(
         { error: "Style analyzer không trả về dữ liệu hợp lệ." },
         { status: 500 }

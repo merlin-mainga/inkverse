@@ -137,7 +137,16 @@ Return STRICT JSON only.
     },
   });
 
-  return result?.output;
+  const rawOutput = result?.output;
+  if (!rawOutput || typeof rawOutput !== "string") return null;
+
+  // Strip markdown code fences the LLM sometimes wraps around JSON
+  const cleaned = rawOutput
+    .replace(/^```(?:json)?\s*/im, "")
+    .replace(/\s*```\s*$/im, "")
+    .trim();
+
+  return JSON.parse(cleaned);
 }
 
 async function callSceneAnalyzerWithRetry(prompt: string, outputIntent?: string, characterCanon?: any) {

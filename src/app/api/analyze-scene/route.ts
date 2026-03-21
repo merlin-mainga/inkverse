@@ -130,15 +130,28 @@ Return STRICT JSON only.
 
   const fullPrompt = `${instruction}\n\nUSER PROMPT:\n${prompt.trim()}`;
 
-  const result: any = await fal.subscribe("fal-ai/any-llm", {
-    input: {
-      model: "google/gemini-flash-1.5",
-      prompt: fullPrompt,
-    },
-  });
+  let result: any;
+  try {
+    result = await fal.subscribe("fal-ai/any-llm", {
+      input: {
+        model: "google/gemini-flash-1.5",
+        prompt: fullPrompt,
+      },
+    });
+  } catch (falErr: any) {
+    console.error("[analyze-scene] fal.subscribe threw:", falErr?.message, JSON.stringify(falErr));
+    throw falErr;
+  }
+
+  console.log("[analyze-scene] fal raw result:", JSON.stringify(result));
 
   const rawOutput = result?.output;
-  if (!rawOutput || typeof rawOutput !== "string") return null;
+  if (!rawOutput || typeof rawOutput !== "string") {
+    console.error("[analyze-scene] rawOutput invalid:", typeof rawOutput, rawOutput);
+    return null;
+  }
+
+  console.log("[analyze-scene] rawOutput string:", rawOutput.slice(0, 500));
 
   // Strip markdown code fences the LLM sometimes wraps around JSON
   const cleaned = rawOutput
@@ -146,7 +159,12 @@ Return STRICT JSON only.
     .replace(/\s*```\s*$/im, "")
     .trim();
 
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch (parseErr: any) {
+    console.error("[analyze-scene] JSON.parse failed:", parseErr?.message, "| cleaned:", cleaned.slice(0, 300));
+    return null;
+  }
 }
 
 async function callSceneAnalyzerWithRetry(prompt: string, outputIntent?: string, characterCanon?: any) {

@@ -528,6 +528,66 @@ export default function PaymentModal({ isOpen, onClose, tier, amount }: PaymentM
               </p>
             </div>
 
+            {/* Manual Transfer Info */}
+            <div
+              style={{
+                background: "rgba(255,255,255,0.02)",
+                borderRadius: 12,
+                padding: 16,
+                marginBottom: 20,
+                border: "1px solid rgba(255,255,255,0.05)",
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: 12,
+                  color: "rgba(240,230,208,0.5)",
+                  marginBottom: 12,
+                  fontWeight: 600,
+                }}
+              >
+                Hoặc chuyển khoản thủ công:
+              </p>
+              {[
+                { label: "Ngân hàng", value: "BIDV" },
+                { label: "Số tài khoản", value: "8893038838" },
+                { label: "Chủ tài khoản", value: "Ca Văn Thành" },
+                { label: "Nội dung", value: order.description },
+              ].map(({ label, value }) => (
+                <div
+                  key={label}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "6px 0",
+                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: 12,
+                      color: "rgba(240,230,208,0.45)",
+                    }}
+                  >
+                    {label}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: label === "Nội dung" ? "monospace" : "'Inter', sans-serif",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: label === "Nội dung" ? "#c9a84c" : "#f0e6d0",
+                    }}
+                  >
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+
             {/* Payment Status */}
             <div
               style={{

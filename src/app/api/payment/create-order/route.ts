@@ -40,8 +40,7 @@ export async function POST(req: NextRequest) {
 
     if (existingOrder) {
       const paymentDescription = generatePaymentDescription(existingOrder.id);
-      const sepayAccountNumber = process.env.SEPAY_ACCOUNT_NUMBER || "";
-      const qrUrl = `https://qr.sepay.vn/img?acc=${sepayAccountNumber}&bank=SEPAY&amount=${amount}&des=${encodeURIComponent(paymentDescription)}&template=compact2`;
+      const qrUrl = `https://qr.sepay.vn/img?acc=8893038838&bank=BIDV&amount=${amount}&des=${encodeURIComponent(paymentDescription)}`;
 
       return NextResponse.json({
         success: true,
@@ -51,27 +50,16 @@ export async function POST(req: NextRequest) {
           amount,
           description: paymentDescription,
           qr_url: qrUrl,
-          bank_account: sepayAccountNumber,
           status: "pending",
         },
       });
     }
 
-    // 4. Check SePay account is configured
-    const sepayAccountNumber = process.env.SEPAY_ACCOUNT_NUMBER || "";
-    if (!sepayAccountNumber) {
-      console.error("[create-order] SEPAY_ACCOUNT_NUMBER is not configured");
-      return NextResponse.json(
-        { error: "Payment gateway not configured" },
-        { status: 500 }
-      );
-    }
-
-    // 5. Generate internal order ID and payment description
+    // 4. Generate internal order ID and payment description
     const internalOrderId = randomUUID();
     const paymentDescription = generatePaymentDescription(internalOrderId);
 
-    // 6. Save order to DB
+    // 5. Save order to DB
     await prisma.paymentOrder.create({
       data: {
         id: internalOrderId,
@@ -83,9 +71,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 7. Generate QR code URL via SePay's public QR API (no auth required)
-    // User scans this QR in their banking app to transfer
-    const qrUrl = `https://qr.sepay.vn/img?acc=${sepayAccountNumber}&bank=SEPAY&amount=${amount}&des=${encodeURIComponent(paymentDescription)}&template=compact2`;
+    // 6. Generate QR code URL via SePay's public QR API (no auth required)
+    const qrUrl = `https://qr.sepay.vn/img?acc=8893038838&bank=BIDV&amount=${amount}&des=${encodeURIComponent(paymentDescription)}`;
 
     return NextResponse.json({
       success: true,
@@ -95,7 +82,6 @@ export async function POST(req: NextRequest) {
         amount,
         description: paymentDescription,
         qr_url: qrUrl,
-        bank_account: sepayAccountNumber,
         status: "pending",
       },
     });

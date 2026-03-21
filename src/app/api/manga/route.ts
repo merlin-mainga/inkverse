@@ -106,9 +106,10 @@ export async function GET(req: NextRequest) {
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
-    console.error("GET /api/manga error:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("GET /api/manga error:", msg);
     return NextResponse.json(
-      { error: "Lỗi tải danh sách manga" },
+      { error: "Lỗi tải danh sách manga", detail: msg },
       { status: 500 }
     );
   }

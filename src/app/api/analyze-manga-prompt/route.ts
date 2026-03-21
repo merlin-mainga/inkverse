@@ -50,7 +50,19 @@ Return STRICT JSON only.
       },
     });
 
-    const parsed = result?.output;
+    // @fal-ai/client wraps output in result.data; LLM returns JSON string
+    const rawOutput = result?.data?.output ?? result?.output;
+    let parsed: any = null;
+    if (rawOutput && typeof rawOutput === "string") {
+      try {
+        const cleaned = rawOutput.replace(/^```(?:json)?\s*/im, "").replace(/\s*```\s*$/im, "").trim();
+        parsed = JSON.parse(cleaned);
+      } catch (e) {
+        console.error("analyze-manga-prompt JSON.parse failed:", e);
+      }
+    } else {
+      console.error("analyze-manga-prompt rawOutput invalid:", typeof rawOutput, rawOutput);
+    }
 
     if (!parsed || !parsed.scene_prompt) {
       console.error("Invalid analyze output:", result);

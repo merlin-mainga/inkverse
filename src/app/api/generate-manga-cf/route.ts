@@ -410,8 +410,8 @@ export async function POST(req: NextRequest) {
       try {
         const result = await generateWithFal(finalPrompt, currentSeed);
         
-        // Extract image URL from Fal response
-        const imageUrl = result?.images?.[0]?.url || result?.image?.url;
+        // Extract image URL from Fal response (@fal-ai/client wraps in result.data)
+        const imageUrl = result?.data?.images?.[0]?.url || result?.images?.[0]?.url || result?.data?.image?.url || result?.image?.url;
         
         if (imageUrl) {
           images.push(imageUrl);

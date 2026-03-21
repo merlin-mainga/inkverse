@@ -88,7 +88,8 @@ export async function POST(req: NextRequest) {
       logs: true,
     });
 
-    const imageOut = result?.images?.[0]?.url || result?.image?.url;
+    // @fal-ai/client wraps output in result.data
+    const imageOut = result?.data?.images?.[0]?.url || result?.images?.[0]?.url || result?.data?.image?.url || result?.image?.url;
 
     if (!imageOut) {
       console.error("Fal enhance response:", JSON.stringify(result).substring(0, 500));

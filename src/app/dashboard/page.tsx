@@ -1068,7 +1068,7 @@ async function handleSaveCharacterFromImage() {
 
     clearInterval(progressTimer);
     setMangaAiProgress(100);
-    setMangaAiImages(images.map((img: string) => `data:image/jpeg;base64,${img}`));
+    setMangaAiImages(images);
   } catch {
     clearInterval(progressTimer);
     setMangaAiProgress(0);
@@ -1138,7 +1138,7 @@ async function handleSaveCharacterFromImage() {
         return;
       }
 
-      setMangaAiImages(images.map((img: string) => `data:image/jpeg;base64,${img}`));
+      setMangaAiImages(images);
       setSelectedDraftIndex(null);
       setMangaAiBaseSeed(typeof data?.base_seed === "number" ? data.base_seed : regenSeed);
     } catch {
@@ -1181,7 +1181,7 @@ async function handleSaveCharacterFromImage() {
     }
 
     setMangaAiOutputLabel("ANATOMY FIX OUTPUT");
-    setMangaAiOutputImage(`data:image/png;base64,${data.image}`);
+    setMangaAiOutputImage(data.image);
   } catch {
     setMangaAiError("Lỗi kết nối khi sửa giải phẫu ảnh.");
   }

@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function Profile() {
   const router = useRouter();
+  const { status } = useSession();
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"history" | "following">("history");
   const [history, setHistory] = useState<any[]>([]);
@@ -12,30 +14,29 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    import("next-auth/react").then(({ getSession }) => {
-      getSession().then(async (s) => {
-        if (!s) {
-          router.push("/");
-          return;
-        }
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      router.push("/");
+      return;
+    }
 
-        const meRes = await fetch("/api/me");
-        if (meRes.ok) {
-          const meData = await meRes.json();
-          setUser(meData.user);
-        }
+    (async () => {
+      const meRes = await fetch("/api/me");
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        setUser(meData.user);
+      }
 
-        const [h, f] = await Promise.all([
-          fetch("/api/history").then((r) => (r.ok ? r.json() : { history: [] })),
-          fetch("/api/follow").then((r) => (r.ok ? r.json() : { follows: [] })),
-        ]);
+      const [h, f] = await Promise.all([
+        fetch("/api/history").then((r) => (r.ok ? r.json() : { history: [] })),
+        fetch("/api/follow").then((r) => (r.ok ? r.json() : { follows: [] })),
+      ]);
 
-        setHistory(h.history || []);
-        setFollows(f.follows || []);
-        setLoading(false);
-      });
-    });
-  }, [router]);
+      setHistory(h.history || []);
+      setFollows(f.follows || []);
+      setLoading(false);
+    })();
+  }, [status, router]);
 
   const isAuthor = user?.role === "author" || user?.role === "admin";
 

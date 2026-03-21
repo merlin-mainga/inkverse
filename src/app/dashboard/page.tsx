@@ -150,7 +150,7 @@ function DashboardMenuIcon({
 }
 export default function DashboardPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   // Refs for Mainga Lab upgrade modal logic
   const labUpgradeTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -228,8 +228,8 @@ const [characterCanonTextForm, setCharacterCanonTextForm] = useState({
 // Wrapper to cancel upgrade timer when user starts typing
 const updateCharacterCanonTextForm = useCallback((updater: (prev: typeof characterCanonTextForm) => typeof characterCanonTextForm) => {
   cancelLabUpgradeTimer(); // Cancel timer when user starts typing
-  updateCharacterCanonTextForm(updater);
-}, []);
+  setCharacterCanonTextForm(updater);
+}, [cancelLabUpgradeTimer]);
 
 const [savingCharacterCanon, setSavingCharacterCanon] = useState(false);
 const [characterCanonSaveError, setCharacterCanonSaveError] = useState("");
@@ -328,16 +328,13 @@ const [mangaAiFinalPromptPreview, setMangaAiFinalPromptPreview] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
-    import("next-auth/react").then(({ getSession }) => {
-      getSession().then((s) => {
-        if (!s) {
-          router.push("/");
-          return;
-        }
-        fetchMyMangas();
-      });
-    });
-  }, [router]);
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      router.push("/");
+      return;
+    }
+    fetchMyMangas();
+  }, [status, router]);
 
 useEffect(() => {
   if (activeTab === "mainga-lab") {
@@ -365,6 +362,7 @@ async function fetchLabCharacters() {
   try {
     const res = await fetch("/api/mainga-lab/characters", {
       cache: "no-store",
+      credentials: "include", // Ensure cookies are sent
     });
 
     const data = await res.json().catch(() => ({}));
@@ -430,6 +428,7 @@ async function handleSaveCharacterCanonText() {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include", // Ensure cookies are sent
       body: JSON.stringify({
         name,
         canonSummary,
@@ -485,6 +484,7 @@ async function handleSaveCharacterFromImage() {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include", // Ensure cookies are sent
       body: JSON.stringify({
         imageUrl: uploadedImageUrl,
         name: characterImageName.trim(),

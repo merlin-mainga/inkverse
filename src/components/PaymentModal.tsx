@@ -45,15 +45,21 @@ export default function PaymentModal({ isOpen, onClose, tier, amount }: PaymentM
 
   // Reset state when modal opens with new tier
   useEffect(() => {
-    if (isOpen) {
-      setOrder(null);
-      setError(null);
-      setPaymentStatus("pending");
-      setTimeLeft(COUNTDOWN_MINUTES * 60);
-      setLoading(true);
-      createOrder();
+    if (!isOpen) return;
+    // Wait for session to be confirmed before creating order
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      onClose();
+      router.push("/");
+      return;
     }
-  }, [isOpen, tier]);
+    setOrder(null);
+    setError(null);
+    setPaymentStatus("pending");
+    setTimeLeft(COUNTDOWN_MINUTES * 60);
+    setLoading(true);
+    createOrder();
+  }, [isOpen, tier, status]);
 
   // Countdown timer
   useEffect(() => {
@@ -102,6 +108,15 @@ export default function PaymentModal({ isOpen, onClose, tier, amount }: PaymentM
     setError(null);
 
     try {
+      // Verify session is still valid before hitting API
+      const { getSession } = await import("next-auth/react");
+      const currentSession = await getSession();
+      if (!currentSession) {
+        onClose();
+        router.push("/");
+        return;
+      }
+
       const res = await fetch("/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,6 +127,11 @@ export default function PaymentModal({ isOpen, onClose, tier, amount }: PaymentM
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 401) {
+          onClose();
+          router.push("/");
+          return;
+        }
         throw new Error(data.error || "Failed to create order");
       }
 

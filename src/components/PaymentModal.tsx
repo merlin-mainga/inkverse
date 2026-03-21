@@ -551,8 +551,8 @@ export default function PaymentModal({ isOpen, onClose, tier, amount }: PaymentM
               </p>
               {[
                 { label: "Ngân hàng", value: "BIDV" },
-                { label: "Số tài khoản", value: "8893038838" },
-                { label: "Chủ tài khoản", value: "Ca Văn Thành" },
+                { label: "Số tài khoản", value: "96247MAINGA" },
+                { label: "Chủ tài khoản", value: "CA VAN THANH" },
                 { label: "Nội dung", value: order.description },
               ].map(({ label, value }) => (
                 <div

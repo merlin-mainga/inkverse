@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     if (existingOrder) {
       const paymentDescription = generatePaymentDescription(existingOrder.id);
-      const qrUrl = `https://qr.sepay.vn/img?acc=8893038838&bank=BIDV&amount=${amount}&des=${encodeURIComponent(paymentDescription)}`;
+      const qrUrl = `https://qr.sepay.vn/img?acc=96247MAINGA&bank=BIDV&amount=${amount}&des=${encodeURIComponent(paymentDescription)}`;
 
       return NextResponse.json({
         success: true,
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     });
 
     // 6. Generate QR code URL via SePay's public QR API (no auth required)
-    const qrUrl = `https://qr.sepay.vn/img?acc=8893038838&bank=BIDV&amount=${amount}&des=${encodeURIComponent(paymentDescription)}`;
+    const qrUrl = `https://qr.sepay.vn/img?acc=96247MAINGA&bank=BIDV&amount=${amount}&des=${encodeURIComponent(paymentDescription)}`;
 
     return NextResponse.json({
       success: true,

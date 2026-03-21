@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import fal from "@/lib/fal";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+async function uploadToCloudinary(falUrl: string): Promise<string> {
+  const result = await cloudinary.uploader.upload(falUrl, {
+    folder: "mainga/generated",
+    resource_type: "image",
+  });
+  return result.secure_url;
+}
 
 type RejectReason =
   | "hand-anatomy"
@@ -411,9 +426,17 @@ export async function POST(req: NextRequest) {
         const result = await generateWithFal(finalPrompt, currentSeed);
         
         // Extract image URL from Fal response (@fal-ai/client wraps in result.data)
-        const imageUrl = result?.data?.images?.[0]?.url || result?.images?.[0]?.url || result?.data?.image?.url || result?.image?.url;
-        
-        if (imageUrl) {
+        const falUrl = result?.data?.images?.[0]?.url || result?.images?.[0]?.url || result?.data?.image?.url || result?.image?.url;
+
+        if (falUrl) {
+          // Upload to Cloudinary immediately — Fal URLs expire in minutes
+          let imageUrl = falUrl;
+          try {
+            imageUrl = await uploadToCloudinary(falUrl);
+            console.log("[generate-manga-cf] Uploaded to Cloudinary:", imageUrl);
+          } catch (uploadErr: any) {
+            console.error("[generate-manga-cf] Cloudinary upload failed, using Fal URL:", uploadErr?.message);
+          }
           images.push(imageUrl);
           usedSeeds.push(currentSeed);
 

@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import fal from "@/lib/fal";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 function buildEnhancePrompt(prompt: string) {
   return [
@@ -89,14 +96,27 @@ export async function POST(req: NextRequest) {
     });
 
     // @fal-ai/client wraps output in result.data
-    const imageOut = result?.data?.images?.[0]?.url || result?.images?.[0]?.url || result?.data?.image?.url || result?.image?.url;
+    const falUrl = result?.data?.images?.[0]?.url || result?.images?.[0]?.url || result?.data?.image?.url || result?.image?.url;
 
-    if (!imageOut) {
+    if (!falUrl) {
       console.error("Fal enhance response:", JSON.stringify(result).substring(0, 500));
       return NextResponse.json(
         { error: "Không nhận được ảnh final." },
         { status: 500 }
       );
+    }
+
+    // Upload to Cloudinary immediately — Fal URLs expire in minutes
+    let imageOut = falUrl;
+    try {
+      const uploaded = await cloudinary.uploader.upload(falUrl, {
+        folder: "mainga/enhanced",
+        resource_type: "image",
+      });
+      imageOut = uploaded.secure_url;
+      console.log("[enhance-manga-cf] Uploaded to Cloudinary:", imageOut);
+    } catch (uploadErr: any) {
+      console.error("[enhance-manga-cf] Cloudinary upload failed, using Fal URL:", uploadErr?.message);
     }
 
     return NextResponse.json({

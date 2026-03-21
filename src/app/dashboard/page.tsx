@@ -7,6 +7,7 @@ import CoverImage from "@/components/CoverImage";
 import CoverEditor from "@/components/CoverEditor";
 import CharacterDetailModal from "@/components/CharacterDetailModal";
 import UpgradeModal from "@/components/UpgradeModal";
+import AuthorGateModal from "@/components/AuthorGateModal";
 
 const GENRES = [
   "Action",
@@ -159,6 +160,24 @@ export default function DashboardPage() {
 
   // Check if user is Pro/Max
   const isProOrMax = (session?.user as any)?.subscriptionTier === "PRO" || (session?.user as any)?.subscriptionTier === "MAX";
+
+  // Check if user is author/admin
+  const isAuthor = (session?.user as any)?.role === "author" || (session?.user as any)?.role === "admin";
+
+  // Author gate modal state
+  const [showAuthorGateModal, setShowAuthorGateModal] = useState(false);
+  const authorGateSnoozeRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-trigger: show AuthorGateModal after 10s if user is not author (once per session)
+  useEffect(() => {
+    if (status !== "authenticated" || isAuthor) return;
+    if (sessionStorage.getItem("authorGateAutoShown")) return;
+    const timer = setTimeout(() => {
+      sessionStorage.setItem("authorGateAutoShown", "1");
+      setShowAuthorGateModal(true);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [status, isAuthor]);
 
   // Helper: Show upgrade modal with per-session limit
   const tryShowLabUpgradeModal = useCallback(() => {
@@ -640,6 +659,7 @@ async function handleSaveCharacterFromImage() {
   }
 
   function openCreateManga() {
+    if (!isAuthor) { setShowAuthorGateModal(true); return; }
     resetCreateForm();
     setShowCreateManga(true);
   }
@@ -790,6 +810,7 @@ async function handleSaveCharacterFromImage() {
   }
 
   function openAddChapter(manga: MangaItem) {
+    if (!isAuthor) { setShowAuthorGateModal(true); return; }
     const nextNum = (manga._count?.chapters || 0) + 1;
     setChapterNum(nextNum);
     setChapterTitle("");
@@ -5654,6 +5675,21 @@ async function handleSaveCharacterFromImage() {
       }}
     />
   )}
+
+  <AuthorGateModal
+    open={showAuthorGateModal}
+    onClose={() => setShowAuthorGateModal(false)}
+    onSnooze={() => {
+      setShowAuthorGateModal(false);
+      if (authorGateSnoozeRef.current) clearTimeout(authorGateSnoozeRef.current);
+      authorGateSnoozeRef.current = setTimeout(() => {
+        setShowAuthorGateModal(true);
+      }, 60000);
+    }}
+    onBecameAuthor={() => {
+      // Session updated — isAuthor will become true on next render
+    }}
+  />
 </div>
 );
 }

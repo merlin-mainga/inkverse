@@ -242,10 +242,14 @@ const [characterImageColorMode, setCharacterImageColorMode] = useState<
 const [savingCharacterFromImage, setSavingCharacterFromImage] = useState(false);
 const [characterImageSaveError, setCharacterImageSaveError] = useState("");
 
-// Preview generation state
+// Preview generation state (for Create from Text form)
 const [characterPreviewUrl, setCharacterPreviewUrl] = useState("");
 const [generatingPreview, setGeneratingPreview] = useState(false);
 const [characterPreviewError, setCharacterPreviewError] = useState("");
+
+// Per-card preview state (for Saved Character cards)
+const [cardPreviews, setCardPreviews] = useState<Record<string, { generating: boolean; previewUrl: string; error: string }>>({});
+const [cardSavingImage, setCardSavingImage] = useState<Record<string, boolean>>({});
 
 async function handleGenerateCharacterPreview() {
   if (generatingPreview) return;
@@ -295,6 +299,51 @@ function resetCharacterCanonImageForm() {
   setCharacterImageFile(null);
   setCharacterImageColorMode("unspecified");
   setCharacterImageSaveError("");
+}
+
+async function handleCardGeneratePreview(character: CharacterProfile) {
+  const id = character.id;
+  setCardPreviews(prev => ({ ...prev, [id]: { generating: true, previewUrl: prev[id]?.previewUrl || "", error: "" } }));
+  try {
+    const res = await fetch("/api/mainga-lab/preview-character", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        name: character.name,
+        canonSummary: character.canonSummary || "",
+        appearanceNotes: character.appearanceNotes || "",
+        mustPreserve: character.mustPreserve || "",
+        colorMode: character.colorMode || "unspecified",
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setCardPreviews(prev => ({ ...prev, [id]: { generating: false, previewUrl: prev[id]?.previewUrl || "", error: data?.error || "Lỗi generate." } }));
+    } else {
+      setCardPreviews(prev => ({ ...prev, [id]: { generating: false, previewUrl: data.imageUrl, error: "" } }));
+    }
+  } catch {
+    setCardPreviews(prev => ({ ...prev, [id]: { generating: false, previewUrl: prev[id]?.previewUrl || "", error: "Lỗi kết nối." } }));
+  }
+}
+
+async function handleCardSaveImage(characterId: string, imageUrl: string) {
+  setCardSavingImage(prev => ({ ...prev, [characterId]: true }));
+  try {
+    const res = await fetch(`/api/mainga-lab/characters/${characterId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ primaryImageUrl: imageUrl }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.character) {
+      setLabCharacters(prev => prev.map(c => c.id === characterId ? { ...c, primaryImageUrl: imageUrl } : c));
+      setCardPreviews(prev => { const next = { ...prev }; delete next[characterId]; return next; });
+    }
+  } catch {}
+  setCardSavingImage(prev => ({ ...prev, [characterId]: false }));
 }
 
   const [mangaAiPrompt, setMangaAiPrompt] = useState("");
@@ -1249,7 +1298,10 @@ async function handleSaveCharacterFromImage() {
   0%, 100% { transform: scale(1) translateX(0); opacity: 0.85; }
   50% { transform: scale(1.15) translateX(3px); opacity: 1; }
 }
-      
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
       `}</style>
 
       <nav
@@ -4336,12 +4388,89 @@ async function handleSaveCharacterFromImage() {
                         display: "block",
                       }}
                     />
+                  ) : cardPreviews[character.id]?.generating ? (
+                    <div style={{ padding: 20, textAlign: "center" }}>
+                      <div
+                        style={{
+                          width: 28,
+                          height: 28,
+                          border: "2.5px solid #c9a84c",
+                          borderTopColor: "transparent",
+                          borderRadius: "50%",
+                          animation: "spin 0.8s linear infinite",
+                          margin: "0 auto 12px",
+                        }}
+                      />
+                      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "rgba(240,230,208,0.5)" }}>
+                        Đang generate...
+                      </div>
+                    </div>
+                  ) : cardPreviews[character.id]?.previewUrl ? (
+                    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                      <img
+                        src={cardPreviews[character.id].previewUrl}
+                        alt={character.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          display: "flex",
+                          gap: 6,
+                          padding: 8,
+                          background: "linear-gradient(to top, rgba(0,0,0,0.85), transparent)",
+                        }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleCardGeneratePreview(character); }}
+                          style={{
+                            flex: 1,
+                            padding: "6px 8px",
+                            background: "rgba(0,0,0,0.5)",
+                            border: "1px solid rgba(201,168,76,0.35)",
+                            borderRadius: 6,
+                            color: "#c9a84c",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            fontFamily: "'Inter', sans-serif",
+                          }}
+                        >
+                          ↺ Tạo lại
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleCardSaveImage(character.id, cardPreviews[character.id].previewUrl); }}
+                          disabled={!!cardSavingImage[character.id]}
+                          style={{
+                            flex: 1,
+                            padding: "6px 8px",
+                            background: cardSavingImage[character.id] ? "rgba(201,168,76,0.5)" : "#c9a84c",
+                            border: "none",
+                            borderRadius: 6,
+                            color: "#080808",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: cardSavingImage[character.id] ? "not-allowed" : "pointer",
+                            fontFamily: "'Inter', sans-serif",
+                          }}
+                        >
+                          {cardSavingImage[character.id] ? "Đang lưu..." : "Lưu ảnh này"}
+                        </button>
+                      </div>
+                      {cardPreviews[character.id]?.error && (
+                        <div style={{ position: "absolute", top: 6, left: 6, right: 6, background: "rgba(200,50,50,0.85)", color: "#fff", fontSize: 11, padding: "4px 8px", borderRadius: 6, textAlign: "center" }}>
+                          {cardPreviews[character.id].error}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div
-                      style={{
-                        padding: 20,
-                        textAlign: "center",
-                      }}
+                      style={{ padding: 20, textAlign: "center" }}
+                      onClick={e => e.stopPropagation()}
                     >
                       <div
                         style={{
@@ -4373,17 +4502,28 @@ async function handleSaveCharacterFromImage() {
                         Chưa có primary image
                       </div>
 
-                      <div
+                      <button
+                        className="gold-btn"
+                        onClick={(e) => { e.stopPropagation(); handleCardGeneratePreview(character); }}
                         style={{
-                          fontFamily: "'Inter', sans-serif",
+                          marginTop: 10,
+                          padding: "7px 14px",
+                          borderRadius: 7,
                           fontSize: 12,
-                          color: "rgba(240,230,208,0.38)",
-                          lineHeight: 1.6,
-                          maxWidth: 220,
+                          fontWeight: 700,
+                          color: "#080808",
+                          cursor: "pointer",
+                          fontFamily: "'Inter', sans-serif",
                         }}
                       >
-                        Character này đang ở text canon phase. Ảnh primary sẽ được gán ở bước sau.
-                      </div>
+                        ✦ Generate Preview
+                      </button>
+
+                      {cardPreviews[character.id]?.error && (
+                        <div style={{ marginTop: 6, color: "#e55", fontSize: 11, fontFamily: "'Inter', sans-serif" }}>
+                          {cardPreviews[character.id].error}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

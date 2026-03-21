@@ -265,14 +265,41 @@ ${JSON.stringify(characterCanon, null, 2)}` : ""}
 
   const fullPrompt = `${instruction}\n\n${payload}`;
 
-  const result: any = await fal.subscribe("fal-ai/any-llm", {
-    input: {
-      model: "google/gemini-flash-1.5",
-      prompt: fullPrompt,
-    },
-  });
+  let result: any;
+  try {
+    result = await fal.subscribe("fal-ai/any-llm", {
+      input: {
+        model: "google/gemini-flash-1.5",
+        prompt: fullPrompt,
+      },
+    });
+  } catch (falErr: any) {
+    console.error("[compile-prompt] fal.subscribe threw:", falErr?.message, JSON.stringify(falErr));
+    throw falErr;
+  }
 
-  return { data: result?.output, outputIntent, wantsMonochrome, negativeColor };
+  console.log("[compile-prompt] fal raw result:", JSON.stringify(result));
+
+  // @fal-ai/client wraps model output in result.data
+  const rawOutput = result?.data?.output ?? result?.output;
+  if (!rawOutput || typeof rawOutput !== "string") {
+    console.error("[compile-prompt] rawOutput invalid:", typeof rawOutput, rawOutput);
+    return { data: null, outputIntent, wantsMonochrome, negativeColor };
+  }
+
+  const cleaned = rawOutput
+    .replace(/^```(?:json)?\s*/im, "")
+    .replace(/\s*```\s*$/im, "")
+    .trim();
+
+  let parsed: any = null;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (parseErr: any) {
+    console.error("[compile-prompt] JSON.parse failed:", parseErr?.message, "| cleaned:", cleaned.slice(0, 300));
+  }
+
+  return { data: parsed, outputIntent, wantsMonochrome, negativeColor };
 }
 
 async function callCompilerWithRetry(
@@ -296,7 +323,7 @@ async function callCompilerWithRetry(
       lastData = data;
       lastMeta = { outputIntent, wantsMonochrome, negativeColor };
 
-      if (data && typeof data === "object" && data.scene_prompt) {
+      if (data && typeof data === "object" && !Array.isArray(data) && data.scene_prompt) {
         return { ok: true, data, ...lastMeta };
       }
     } catch (err) {

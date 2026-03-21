@@ -2935,7 +2935,7 @@ async function handleSaveCharacterFromImage() {
                           }}
                         >
                           <img
-                            src={image}
+                            src={image.startsWith("http") ? image : `data:image/jpeg;base64,${image}`}
                             alt={`AI Manga Draft ${index + 1}`}
                             style={{
                               width: "100%",
@@ -2977,7 +2977,7 @@ async function handleSaveCharacterFromImage() {
                             </button>
 
                             <a
-                              href={image}
+                              href={image.startsWith("http") ? image : `data:image/jpeg;base64,${image}`}
                               download={`mainga-ai-draft-${index + 1}.jpg`}
                               style={{
                                 flex: 1,
@@ -3068,7 +3068,7 @@ async function handleSaveCharacterFromImage() {
                           }}
                         >
                           <img
-                            src={mangaAiOutputImage}
+                            src={mangaAiOutputImage.startsWith("http") ? mangaAiOutputImage : `data:image/jpeg;base64,${mangaAiOutputImage}`}
                             alt="AI Manga Output"
                             style={{
                               width: "100%",
@@ -3081,7 +3081,7 @@ async function handleSaveCharacterFromImage() {
 
                           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
                             <a
-                              href={mangaAiOutputImage}
+                              href={mangaAiOutputImage.startsWith("http") ? mangaAiOutputImage : `data:image/jpeg;base64,${mangaAiOutputImage}`}
                               download="mainga-ai-output.png"
                               style={{
                                 padding: "10px 16px",

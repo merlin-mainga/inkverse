@@ -3,6 +3,67 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
+async function fetchMangasWithRetry(
+  where: any,
+  page: number,
+  limit: number,
+  retries = 3,
+  delayMs = 800
+) {
+  let lastError: Error | null = null;
+
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const [mangas, total] = await Promise.all([
+        prisma.manga.findMany({
+          where,
+          include: {
+            author: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+            _count: {
+              select: {
+                chapters: true,
+                comments: true,
+                follows: true,
+                ratings: true,
+              },
+            },
+            ratings: {
+              select: {
+                score: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.manga.count({ where }),
+      ]);
+      return { mangas, total };
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`GET /api/manga attempt ${i + 1}/${retries + 1} failed:`, error);
+      if (i < retries) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, delayMs * Math.pow(2, i))
+        );
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -37,39 +98,7 @@ export async function GET(req: NextRequest) {
       where.authorId = (session.user as any).id;
     }
 
-    const [mangas, total] = await Promise.all([
-      prisma.manga.findMany({
-        where,
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-          _count: {
-            select: {
-              chapters: true,
-              comments: true,
-              follows: true,
-              ratings: true,
-            },
-          },
-          ratings: {
-            select: {
-              score: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.manga.count({ where }),
-    ]);
+    const { mangas, total } = await fetchMangasWithRetry(where, page, limit);
 
     const result = mangas.map((m) => {
       const avgRating =
@@ -105,10 +134,10 @@ export async function GET(req: NextRequest) {
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
-    console.error("GET /api/manga error:", error);
+    console.error("GET /api/manga failed after retries:", error);
     return NextResponse.json(
-      { error: "Lỗi tải danh sách manga" },
-      { status: 500 }
+      { error: "Database temporarily unavailable" },
+      { status: 503 }
     );
   }
 }

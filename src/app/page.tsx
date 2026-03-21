@@ -652,7 +652,16 @@ export default function HomePage() {
       if (searchQuery.trim()) params.set("q", searchQuery.trim());
       if (selectedGenre !== "Tất cả") params.set("genre", selectedGenre);
 
-      const res = await fetch(`/api/manga?${params.toString()}`, { cache: "no-store" });
+      const url = `/api/manga?${params.toString()}`;
+      let res = await fetch(url, { cache: "no-store" });
+
+      // 503 = cold start / DB temporarily unavailable, retry once
+      if (res.status === 503) {
+        console.log("Manga API 503, retrying...");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        res = await fetch(url, { cache: "no-store" });
+      }
+
       if (!res.ok) throw new Error(`manga ${res.status}`);
 
       const data = await res.json();

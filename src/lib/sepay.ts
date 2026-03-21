@@ -183,9 +183,16 @@ export function generatePaymentDescription(orderId: string): string {
  * Parse payment description to extract order ID
  */
 export function parsePaymentDescription(description: string): string | null {
-  // Expected format: MAINGA-{order_id}
-  const match = description.match(/^MAINGA-(.+)$/);
-  return match ? match[1] : null;
+  // Banks strip dashes from transfer content, so UUID arrives as 32 hex chars
+  // e.g. "MAINGAeb40f53da42345a7b4a15593f736affb" → "eb40f53d-a423-45a7-b4a1-5593f736affb"
+  const noDashMatch = description.match(/MAINGA([a-f0-9]{32})/i);
+  if (noDashMatch) {
+    const h = noDashMatch[1];
+    return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+  }
+  // Fallback: original format with dashes MAINGA-{uuid}
+  const dashMatch = description.match(/MAINGA-([a-f0-9-]{36})/i);
+  return dashMatch ? dashMatch[1] : null;
 }
 
 /**

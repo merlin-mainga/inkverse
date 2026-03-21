@@ -190,6 +190,9 @@ model PaymentOrder {
   sepayOrderId  String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  // Prevent duplicate pending orders for same user + tier
+  @@unique([userId, tier, status])
 }
 
 model PaymentTransaction {

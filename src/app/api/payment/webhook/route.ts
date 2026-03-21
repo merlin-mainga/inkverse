@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
         data: {
           subscriptionTier: order.tier,
           subscriptionExpiry: subscriptionExpiry,
-          mana: manaAmount,
+          mana: { increment: manaAmount },
         },
       }),
       // Mark order as completed

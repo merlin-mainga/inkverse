@@ -1031,7 +1031,7 @@ async function handleSaveCharacterFromImage() {
         return;
       }
     } else {
-      // Use CF Workers (original flow)
+      // Use Fal.ai flux/dev → Cloudinary (HQ generation)
       const imageRes = await fetch("/api/generate-manga-cf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1046,6 +1046,7 @@ async function handleSaveCharacterFromImage() {
       });
 
       const imageData = await imageRes.json();
+      console.log("[MangaAI] generate-manga-cf response:", JSON.stringify(imageData).slice(0, 300));
 
       if (!imageRes.ok) {
         clearInterval(progressTimer);
@@ -1056,6 +1057,7 @@ async function handleSaveCharacterFromImage() {
       }
 
       images = Array.isArray(imageData?.images) ? imageData.images : [];
+      console.log("[MangaAI] images array:", images);
 
       if (images.length === 0) {
         clearInterval(progressTimer);
@@ -1131,6 +1133,7 @@ async function handleSaveCharacterFromImage() {
       }
 
       const images = Array.isArray(data?.images) ? data.images : [];
+      console.log("[MangaAI] variation images array:", images);
 
       if (images.length === 0) {
         setMangaAiError("Không nhận được variation nào.");

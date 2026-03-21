@@ -241,6 +241,40 @@ const [characterImageColorMode, setCharacterImageColorMode] = useState<
 >("unspecified");
 const [savingCharacterFromImage, setSavingCharacterFromImage] = useState(false);
 const [characterImageSaveError, setCharacterImageSaveError] = useState("");
+
+// Preview generation state
+const [characterPreviewUrl, setCharacterPreviewUrl] = useState("");
+const [generatingPreview, setGeneratingPreview] = useState(false);
+const [characterPreviewError, setCharacterPreviewError] = useState("");
+
+async function handleGenerateCharacterPreview() {
+  if (generatingPreview) return;
+  const { name, canonSummary, appearanceNotes, mustPreserve, colorMode } = characterCanonTextForm;
+  if (!name || !appearanceNotes) {
+    setCharacterPreviewError("Cần nhập tên và appearance notes trước.");
+    return;
+  }
+  setGeneratingPreview(true);
+  setCharacterPreviewError("");
+  try {
+    const res = await fetch("/api/mainga-lab/preview-character", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ name, canonSummary, appearanceNotes, mustPreserve, colorMode }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setCharacterPreviewError(data?.error || "Lỗi generate preview.");
+    } else {
+      setCharacterPreviewUrl(data.imageUrl);
+    }
+  } catch {
+    setCharacterPreviewError("Lỗi kết nối khi generate preview.");
+  }
+  setGeneratingPreview(false);
+}
+
 function resetCharacterCanonTextForm() {
   setCharacterCanonTextForm({
     name: "",
@@ -251,6 +285,8 @@ function resetCharacterCanonTextForm() {
     colorMode: "unspecified",
   });
   setCharacterCanonSaveError("");
+  setCharacterPreviewUrl("");
+  setCharacterPreviewError("");
 }
 
 function resetCharacterCanonImageForm() {
@@ -437,6 +473,7 @@ async function handleSaveCharacterCanonText() {
         avoidDrift,
         colorMode: characterCanonTextForm.colorMode,
         sourceType: "generated",
+        primaryImageUrl: characterPreviewUrl || undefined,
       }),
     });
 
@@ -3463,7 +3500,7 @@ async function handleSaveCharacterFromImage() {
                         opacity: savingCharacterCanon ? 0.7 : 1,
                       }}
                     >
-                      {savingCharacterCanon ? "Đang lưu..." : "Continue to Save"}
+                      {savingCharacterCanon ? "Đang lưu..." : characterPreviewUrl ? "Lưu nhân vật ✓" : "Lưu nhân vật"}
                     </button>
 
                     <button
@@ -3526,22 +3563,120 @@ async function handleSaveCharacterFromImage() {
                         color: "#c9a84c",
                         letterSpacing: "0.1em",
                         textTransform: "uppercase",
-                        marginBottom: 6,
+                        marginBottom: 10,
                         fontWeight: 700,
                       }}
                     >
                       Primary Image
                     </div>
-                    <div
-                      style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: 12,
-                        color: "rgba(240,230,208,0.38)",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      Chưa có ở text phase. Ảnh primary sẽ được sinh hoặc gán ở bước sau.
-                    </div>
+
+                    {/* Preview image */}
+                    {characterPreviewUrl ? (
+                      <div>
+                        <img
+                          src={characterPreviewUrl}
+                          alt="Character preview"
+                          style={{
+                            width: "100%",
+                            borderRadius: 8,
+                            display: "block",
+                            marginBottom: 10,
+                            border: "1px solid rgba(201,168,76,0.2)",
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleGenerateCharacterPreview}
+                          disabled={generatingPreview}
+                          style={{
+                            width: "100%",
+                            padding: "8px 12px",
+                            borderRadius: 8,
+                            background: "rgba(255,255,255,0.04)",
+                            border: "1px solid rgba(201,168,76,0.2)",
+                            color: generatingPreview ? "rgba(240,230,208,0.4)" : "#c9a84c",
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: generatingPreview ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          {generatingPreview ? "Đang tạo lại..." : "↺ Tạo lại"}
+                        </button>
+                        {characterPreviewError && (
+                          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#ff6b6b", marginTop: 6 }}>
+                            {characterPreviewError}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <div
+                          style={{
+                            width: "100%",
+                            aspectRatio: "3/4",
+                            background: "rgba(255,255,255,0.02)",
+                            border: "1px dashed rgba(201,168,76,0.15)",
+                            borderRadius: 8,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 8,
+                            marginBottom: 10,
+                            color: "rgba(240,230,208,0.3)",
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: 12,
+                          }}
+                        >
+                          {generatingPreview ? (
+                            <>
+                              <div style={{ fontSize: 24 }}>⏳</div>
+                              <span>Đang generate...</span>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ fontSize: 24 }}>🎨</div>
+                              <span>Chưa có ảnh preview</span>
+                            </>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleGenerateCharacterPreview}
+                          disabled={generatingPreview}
+                          style={{
+                            width: "100%",
+                            padding: "9px 12px",
+                            borderRadius: 8,
+                            background: generatingPreview
+                              ? "rgba(201,168,76,0.1)"
+                              : "linear-gradient(135deg,#c9a84c,#8b6914)",
+                            border: "none",
+                            color: generatingPreview ? "rgba(240,230,208,0.4)" : "#080808",
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: generatingPreview ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          {generatingPreview ? "Đang generate..." : "✦ Generate Preview"}
+                        </button>
+                        {characterPreviewError && (
+                          <div
+                            style={{
+                              fontFamily: "'Inter', sans-serif",
+                              fontSize: 11,
+                              color: "#ff6b6b",
+                              marginTop: 8,
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            {characterPreviewError}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {[

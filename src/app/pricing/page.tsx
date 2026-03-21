@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Wand2, ImageIcon, Zap, Shield, Check, CreditCard, RefreshCw, Headphones, ChevronDown } from "lucide-react";
 import PaymentModal from "@/components/PaymentModal";
+
+// March 25, 2026 23:59 ICT (UTC+7)
+const FOUNDER_DEADLINE = new Date("2026-03-25T16:59:00Z");
+
+const FOUNDER_PRICES = { STARTER: 39000, PRO: 99000, MAX: 199000 };
+const STANDARD_PRICES = { STARTER: 47000, PRO: 119000, MAX: 239000 };
 
 interface PricingTier {
   name: string;
@@ -149,105 +155,135 @@ const trustSignals = [
   },
 ];
 
+function formatVnd(n: number) {
+  return n.toLocaleString("vi-VN") + "đ";
+}
+
 export default function PricingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isYearly, setIsYearly] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  
-  // Payment modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedTier, setSelectedTier] = useState<"STARTER" | "PRO" | "MAX">("PRO");
   const [selectedAmount, setSelectedAmount] = useState(99000);
 
-  const handleCTAClick = (tier: PricingTier) => {
-    // Free tier - redirect to register/login
-    if (tier.tierKey === "FREE") {
-      if (!session) {
-        router.push("/login");
-      } else {
-        router.push("/dashboard");
+  // Founder deadline countdown
+  const [isFounderPeriod, setIsFounderPeriod] = useState(new Date() < FOUNDER_DEADLINE);
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
+
+  useEffect(() => {
+    function calcTimeLeft() {
+      const diff = FOUNDER_DEADLINE.getTime() - Date.now();
+      if (diff <= 0) {
+        setIsFounderPeriod(false);
+        return;
       }
+      setIsFounderPeriod(true);
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      setTimeLeft({ days, hours, mins, secs });
+    }
+    calcTimeLeft();
+    const timer = setInterval(calcTimeLeft, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleCTAClick = (tier: PricingTier) => {
+    if (tier.tierKey === "FREE") {
+      router.push(session ? "/dashboard" : "/login");
       return;
     }
-
-    // Paid tiers - open payment modal
-    const amount = isYearly ? tier.yearlyAmount : tier.monthlyAmount;
+    const founderAmount = isYearly
+      ? Math.round(tier.monthlyAmount * 0.8)
+      : FOUNDER_PRICES[tier.tierKey as keyof typeof FOUNDER_PRICES] ?? tier.monthlyAmount;
+    const standardAmount = isYearly
+      ? Math.round(STANDARD_PRICES[tier.tierKey as keyof typeof STANDARD_PRICES] * 0.8)
+      : STANDARD_PRICES[tier.tierKey as keyof typeof STANDARD_PRICES] ?? tier.monthlyAmount;
+    const amount = isFounderPeriod ? founderAmount : standardAmount;
     setSelectedTier(tier.tierKey as "STARTER" | "PRO" | "MAX");
     setSelectedAmount(amount);
     setShowPaymentModal(true);
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(180deg, #0a0806 0%, #111111 100%)",
-        padding: "60px 20px 100px",
-      }}
-    >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #0a0806 0%, #111111 100%)" }}>
+      {/* Founder Countdown Banner */}
+      {isFounderPeriod && (
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
+            background: "linear-gradient(90deg, #1a1200 0%, #2a1e00 50%, #1a1200 100%)",
+            borderBottom: "1px solid rgba(201,168,76,0.35)",
+            padding: "10px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 20,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, color: "#c9a84c", display: "flex", alignItems: "center", gap: 6 }}>
+            🔒 Giá sáng lập — còn
+          </span>
+
+          {/* Countdown blocks */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {[
+              { val: timeLeft.days, label: "ngày" },
+              { val: timeLeft.hours, label: "giờ" },
+              { val: timeLeft.mins, label: "phút" },
+              { val: timeLeft.secs, label: "giây" },
+            ].map((unit, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{
+                  background: "rgba(201,168,76,0.15)",
+                  border: "1px solid rgba(201,168,76,0.3)",
+                  borderRadius: 6,
+                  padding: "4px 10px",
+                  minWidth: 42,
+                  textAlign: "center",
+                }}>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 800, color: "#f0e6d0", display: "block", lineHeight: 1.2 }}>
+                    {String(unit.val).padStart(2, "0")}
+                  </span>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 9, color: "rgba(240,230,208,0.5)", letterSpacing: "0.05em" }}>
+                    {unit.label}
+                  </span>
+                </div>
+                {i < 3 && <span style={{ color: "#c9a84c", fontWeight: 700, fontSize: 16 }}>:</span>}
+              </div>
+            ))}
+          </div>
+
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.6)" }}>
+            Sau ngày 25/3 giá tăng — lock ngay hôm nay
+          </span>
+        </div>
+      )}
+
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "60px 20px 100px" }}>
         {/* Headline */}
         <div style={{ textAlign: "center", marginBottom: 60 }}>
-          <h1
-            style={{
-              fontFamily: "'Be Vietnam Pro', sans-serif",
-              fontSize: 40,
-              fontWeight: 800,
-              color: "#f0e6d0",
-              marginBottom: 20,
-              lineHeight: 1.2,
-              letterSpacing: "0.02em",
-            }}
-          >
+          <h1 style={{ fontFamily: "'Be Vietnam Pro', sans-serif", fontSize: 40, fontWeight: 800, color: "#f0e6d0", marginBottom: 20, lineHeight: 1.2, letterSpacing: "0.02em" }}>
             Tạo Manga Không Cần Vẽ.{" "}
             <span style={{ color: "#c9a84c" }}>Bắt Đầu Từ Hôm Nay.</span>
           </h1>
-          <p
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 16,
-              color: "rgba(240,230,208,0.55)",
-              maxWidth: 500,
-              margin: "0 auto",
-              lineHeight: 1.6,
-            }}
-          >
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, color: "rgba(240,230,208,0.55)", maxWidth: 500, margin: "0 auto", lineHeight: 1.6 }}>
             Tạo nhân vật, giữ họ consistent, viết chapter tiếp. Không cần biết vẽ.
           </p>
         </div>
 
         {/* Feature Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: 12,
-            marginBottom: 40,
-          }}
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 40 }}>
           {features.map((feature, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "16px 14px",
-                background: "rgba(201,168,76,0.03)",
-                borderRadius: 12,
-                border: "1px solid rgba(201,168,76,0.08)",
-              }}
-            >
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 14px", background: "rgba(201,168,76,0.03)", borderRadius: 12, border: "1px solid rgba(201,168,76,0.08)" }}>
               <feature.icon size={20} color="#c9a84c" strokeWidth={1.5} />
-              <span
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: 13,
-                  color: "rgba(240,230,208,0.8)",
-                  lineHeight: 1.4,
-                }}
-              >
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.8)", lineHeight: 1.4 }}>
                 {feature.text}
               </span>
             </div>
@@ -255,400 +291,175 @@ export default function PricingPage() {
         </div>
 
         {/* Billing Toggle */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 16,
-            marginBottom: 32,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 14,
-              color: !isYearly ? "#f0e6d0" : "rgba(240,230,208,0.45)",
-              fontWeight: !isYearly ? 600 : 400,
-              transition: "all 0.2s ease",
-            }}
-          >
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 16, marginBottom: 32 }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: !isYearly ? "#f0e6d0" : "rgba(240,230,208,0.45)", fontWeight: !isYearly ? 600 : 400, transition: "all 0.2s ease" }}>
             Monthly
           </span>
-
           <button
             onClick={() => setIsYearly(!isYearly)}
-            style={{
-              width: 48,
-              height: 26,
-              borderRadius: 13,
-              background: isYearly
-                ? "linear-gradient(135deg, #c9a84c, #a08030)"
-                : "rgba(255,255,255,0.08)",
-              border:
-                "1px solid " +
-                (isYearly ? "rgba(201,168,76,0.5)" : "rgba(255,255,255,0.1)"),
-              cursor: "pointer",
-              position: "relative",
-              transition: "all 0.2s ease",
-            }}
+            style={{ width: 48, height: 26, borderRadius: 13, background: isYearly ? "linear-gradient(135deg, #c9a84c, #a08030)" : "rgba(255,255,255,0.08)", border: "1px solid " + (isYearly ? "rgba(201,168,76,0.5)" : "rgba(255,255,255,0.1)"), cursor: "pointer", position: "relative", transition: "all 0.2s ease" }}
           >
-            <div
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: "50%",
-                background: isYearly ? "#0a0806" : "rgba(255,255,255,0.6)",
-                position: "absolute",
-                top: 2,
-                left: isYearly ? 26 : 3,
-                transition: "all 0.2s ease",
-              }}
-            />
+            <div style={{ width: 20, height: 20, borderRadius: "50%", background: isYearly ? "#0a0806" : "rgba(255,255,255,0.6)", position: "absolute", top: 2, left: isYearly ? 26 : 3, transition: "all 0.2s ease" }} />
           </button>
-
-          <span
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 14,
-              color: isYearly ? "#f0e6d0" : "rgba(240,230,208,0.45)",
-              fontWeight: isYearly ? 600 : 400,
-              transition: "all 0.2s ease",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: isYearly ? "#f0e6d0" : "rgba(240,230,208,0.45)", fontWeight: isYearly ? 600 : 400, transition: "all 0.2s ease", display: "flex", alignItems: "center", gap: 8 }}>
             Yearly
-            <span
-              style={{
-                background: "rgba(201,168,76,0.15)",
-                color: "#c9a84c",
-                fontSize: 11,
-                fontWeight: 600,
-                padding: "2px 8px",
-                borderRadius: 4,
-                letterSpacing: "0.02em",
-              }}
-            >
+            <span style={{ background: "rgba(201,168,76,0.15)", color: "#c9a84c", fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.02em" }}>
               -20%
             </span>
           </span>
         </div>
 
         {/* Pricing Tiers */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: 20,
-            marginBottom: 60,
-          }}
-        >
-          {pricingTiers.map((tier) => (
-            <div
-              key={tier.name}
-              style={{
-                background: tier.popular
-                  ? "linear-gradient(180deg, #1a1600 0%, #111111 100%)"
-                  : "rgba(255,255,255,0.015)",
-                border: tier.popular
-                  ? "2px solid #c9a84c"
-                  : "1px solid rgba(201,168,76,0.1)",
-                borderRadius: 20,
-                padding: "28px 24px",
-                paddingTop: tier.popular || tier.exclusive ? 36 : 28,
-                position: "relative",
-                overflow: "visible",
-                display: "flex",
-                flexDirection: "column",
-                boxShadow: tier.popular
-                  ? "0 0 40px rgba(201, 168, 76, 0.15)"
-                  : "none",
-              }}
-            >
-              {/* Badge */}
-              {(tier.popular || tier.exclusive) && tier.badge && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: -12,
-                    right: 20,
-                    transform: "rotate(-2deg)",
-                    zIndex: 10,
-                  }}
-                >
-                  <span
-                    style={{
-                      background: tier.exclusive
-                        ? "linear-gradient(135deg, #8b5cf6, #6d28d9)"
-                        : "linear-gradient(135deg, #c9a84c, #a08030)",
-                      color: tier.exclusive ? "#fff" : "#0a0806",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: "5px 12px",
-                      borderRadius: 4,
-                      fontFamily: "'Inter', sans-serif",
-                      letterSpacing: "0.04em",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                    }}
-                  >
-                    {tier.popular ? "⭐ " : "👑 "}
-                    {tier.badge}
-                  </span>
-                </div>
-              )}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, marginBottom: 60 }}>
+          {pricingTiers.map((tier) => {
+            const founderPrice = FOUNDER_PRICES[tier.tierKey as keyof typeof FOUNDER_PRICES];
+            const standardPrice = STANDARD_PRICES[tier.tierKey as keyof typeof STANDARD_PRICES];
+            const isPaid = tier.tierKey !== "FREE";
 
-              {/* Tier Name */}
+            return (
               <div
+                key={tier.name}
                 style={{
-                  fontFamily: "'Cinzel', serif",
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: tier.popular ? "#c9a84c" : "#f0e6d0",
-                  marginBottom: 8,
-                  letterSpacing: "0.06em",
+                  background: tier.popular ? "linear-gradient(180deg, #1a1600 0%, #111111 100%)" : "rgba(255,255,255,0.015)",
+                  border: tier.popular ? "2px solid #c9a84c" : "1px solid rgba(201,168,76,0.1)",
+                  borderRadius: 20,
+                  padding: "28px 24px",
+                  paddingTop: tier.popular || tier.exclusive ? 36 : 28,
+                  position: "relative",
+                  overflow: "visible",
+                  display: "flex",
+                  flexDirection: "column",
+                  boxShadow: tier.popular ? "0 0 40px rgba(201, 168, 76, 0.15)" : "none",
                 }}
               >
-                {tier.name}
+                {/* Badge */}
+                {(tier.popular || tier.exclusive) && tier.badge && (
+                  <div style={{ position: "absolute", top: -12, right: 20, transform: "rotate(-2deg)", zIndex: 10 }}>
+                    <span style={{ background: tier.exclusive ? "linear-gradient(135deg, #8b5cf6, #6d28d9)" : "linear-gradient(135deg, #c9a84c, #a08030)", color: tier.exclusive ? "#fff" : "#0a0806", fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 4, fontFamily: "'Inter', sans-serif", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: 4 }}>
+                      {tier.popular ? "⭐ " : "👑 "}{tier.badge}
+                    </span>
+                  </div>
+                )}
+
+                {/* Tier Name */}
+                <div style={{ fontFamily: "'Cinzel', serif", fontSize: 18, fontWeight: 600, color: tier.popular ? "#c9a84c" : "#f0e6d0", marginBottom: 8, letterSpacing: "0.06em" }}>
+                  {tier.name}
+                </div>
+
+                {/* Tagline */}
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: "rgba(240,230,208,0.55)", lineHeight: 1.5, marginBottom: 16 }}>
+                  {tier.tagline}
+                </div>
+
+                {/* Price — Founder period: show locked price + strikethrough new price */}
+                <div style={{ marginBottom: 8 }}>
+                  {isPaid && isFounderPeriod ? (
+                    <>
+                      {/* LOCK badge + founder price */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span style={{ background: "linear-gradient(135deg, #c9a84c, #a08030)", color: "#0a0806", fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 4, letterSpacing: "0.06em" }}>
+                          🔒 LOCK
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 32, fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em", lineHeight: 1 }}>
+                          {formatVnd(isYearly ? Math.round(founderPrice * 0.8) : founderPrice)}
+                        </span>
+                      </div>
+                      {/* Strikethrough new price */}
+                      <div style={{ marginTop: 5, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.35)", textDecoration: "line-through" }}>
+                          {formatVnd(isYearly ? Math.round(standardPrice * 0.8) : standardPrice)} sau 25/3
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    /* Standard period or FREE tier */
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 32, fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em", lineHeight: 1 }}>
+                        {isPaid
+                          ? formatVnd(isYearly ? Math.round(standardPrice * 0.8) : standardPrice)
+                          : (isYearly ? tier.yearlyVnd : tier.monthlyVnd)}
+                      </span>
+                    </div>
+                  )}
+
+                  {isPaid && (
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 4 }}>
+                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: "#888888" }}>
+                        {isYearly ? tier.yearlyUsd : tier.monthlyUsd}
+                      </span>
+                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "rgba(240,230,208,0.4)" }}>
+                        /tháng
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Yearly Discount */}
+                {isYearly && tier.popular && (
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#4ade80", marginBottom: 12, fontWeight: 500 }}>
+                    Tiết kiệm 20%
+                  </div>
+                )}
+
+                {/* Features */}
+                <ul style={{ margin: 0, padding: 0, listStyle: "none", flex: 1, marginBottom: 20 }}>
+                  {tier.features.map((feature, i) => (
+                    <li key={i} style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "rgba(240,230,208,0.7)", marginBottom: 10, paddingLeft: 18, position: "relative", lineHeight: 1.4 }}>
+                      <Check size={14} color="#c9a84c" strokeWidth={2} style={{ position: "absolute", left: 0, top: 2 }} />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA Button */}
+                <button
+                  onClick={() => handleCTAClick(tier)}
+                  style={{ display: "block", width: "100%", textAlign: "center", padding: "14px 20px", background: tier.popular ? "linear-gradient(135deg, #c9a84c, #a08030)" : "transparent", border: tier.popular ? "none" : "1px solid rgba(201,168,76,0.3)", borderRadius: 10, color: tier.popular ? "#0a0806" : "#c9a84c", fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer", transition: "all 0.2s ease" }}
+                  onMouseEnter={(e) => {
+                    if (tier.popular) {
+                      (e.target as HTMLElement).style.transform = "translateY(-2px)";
+                      (e.target as HTMLElement).style.boxShadow = "0 6px 20px rgba(201,168,76,0.35)";
+                    } else {
+                      (e.target as HTMLElement).style.background = "rgba(201,168,76,0.1)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (tier.popular) {
+                      (e.target as HTMLElement).style.transform = "translateY(0)";
+                      (e.target as HTMLElement).style.boxShadow = "none";
+                    } else {
+                      (e.target as HTMLElement).style.background = "transparent";
+                    }
+                  }}
+                >
+                  {tier.cta}
+                </button>
+
+                {/* Subtext */}
+                {tier.subtext && (
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "rgba(240,230,208,0.35)", textAlign: "center", marginTop: 12, lineHeight: 1.4 }}>
+                    {tier.subtext}
+                  </div>
+                )}
               </div>
-
-              {/* Tagline */}
-              <div
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: 14,
-                  color: "rgba(240,230,208,0.55)",
-                  lineHeight: 1.5,
-                  marginBottom: 16,
-                }}
-              >
-                {tier.tagline}
-              </div>
-
-              {/* Price */}
-              <div style={{ marginBottom: 8 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "baseline",
-                    gap: 4,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 32,
-                      fontWeight: 800,
-                      color: "#ffffff",
-                      letterSpacing: "-0.02em",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {isYearly ? tier.yearlyVnd : tier.monthlyVnd}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "baseline",
-                    gap: 4,
-                    marginTop: 4,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 14,
-                      color: "#888888",
-                    }}
-                  >
-                    {isYearly ? tier.yearlyUsd : tier.monthlyUsd}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 12,
-                      color: "rgba(240,230,208,0.4)",
-                    }}
-                  >
-                    /tháng
-                  </span>
-                </div>
-              </div>
-
-              {/* Yearly Discount */}
-              {isYearly && tier.popular && (
-                <div
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: 12,
-                    color: "#4ade80",
-                    marginBottom: 12,
-                    fontWeight: 500,
-                  }}
-                >
-                  Tiết kiệm 20%
-                </div>
-              )}
-
-              {/* Features */}
-              <ul
-                style={{
-                  margin: 0,
-                  padding: 0,
-                  listStyle: "none",
-                  flex: 1,
-                  marginBottom: 20,
-                }}
-              >
-                {tier.features.map((feature, i) => (
-                  <li
-                    key={i}
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 13,
-                      color: "rgba(240,230,208,0.7)",
-                      marginBottom: 10,
-                      paddingLeft: 18,
-                      position: "relative",
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    <Check
-                      size={14}
-                      color="#c9a84c"
-                      strokeWidth={2}
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        top: 2,
-                      }}
-                    />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-
-              {/* CTA Button */}
-              <button
-                onClick={() => handleCTAClick(tier)}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  textAlign: "center",
-                  padding: "14px 20px",
-                  background: tier.popular
-                    ? "linear-gradient(135deg, #c9a84c, #a08030)"
-                    : "transparent",
-                  border: tier.popular
-                    ? "none"
-                    : "1px solid rgba(201,168,76,0.3)",
-                  borderRadius: 10,
-                  color: tier.popular ? "#0a0806" : "#c9a84c",
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  if (tier.popular) {
-                    (e.target as HTMLElement).style.transform = "translateY(-2px)";
-                    (e.target as HTMLElement).style.boxShadow =
-                      "0 6px 20px rgba(201,168,76,0.35)";
-                  } else {
-                    (e.target as HTMLElement).style.background = "rgba(201,168,76,0.1)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (tier.popular) {
-                    (e.target as HTMLElement).style.transform = "translateY(0)";
-                    (e.target as HTMLElement).style.boxShadow = "none";
-                  } else {
-                    (e.target as HTMLElement).style.background = "transparent";
-                  }
-                }}
-              >
-                {tier.cta}
-              </button>
-
-              {/* Subtext */}
-              {tier.subtext && (
-                <div
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: 11,
-                    color: "rgba(240,230,208,0.35)",
-                    textAlign: "center",
-                    marginTop: 12,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {tier.subtext}
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Trust Signals */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 16,
-            marginBottom: 80,
-          }}
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 80 }}>
           {trustSignals.map((signal, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                padding: "20px 18px",
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.05)",
-              }}
-            >
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  background: "rgba(201,168,76,0.08)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "20px 18px", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(201,168,76,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <signal.icon size={20} color="#c9a84c" strokeWidth={1.5} />
               </div>
               <div>
-                <div
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "#f0e6d0",
-                    marginBottom: 2,
-                  }}
-                >
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 600, color: "#f0e6d0", marginBottom: 2 }}>
                   {signal.title}
                 </div>
-                <div
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: 12,
-                    color: "rgba(240,230,208,0.45)",
-                  }}
-                >
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "rgba(240,230,208,0.45)" }}>
                   {signal.description}
                 </div>
               </div>
@@ -658,80 +469,24 @@ export default function PricingPage() {
 
         {/* FAQ Section */}
         <div style={{ maxWidth: 700, margin: "0 auto" }}>
-          <h2
-            style={{
-              fontFamily: "'Be Vietnam Pro', sans-serif",
-              fontSize: 24,
-              fontWeight: 700,
-              color: "#f0e6d0",
-              textAlign: "center",
-              marginBottom: 32,
-            }}
-          >
+          <h2 style={{ fontFamily: "'Be Vietnam Pro', sans-serif", fontSize: 24, fontWeight: 700, color: "#f0e6d0", textAlign: "center", marginBottom: 32 }}>
             Câu hỏi thường gặp
           </h2>
-
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {faqs.map((faq, i) => (
-              <div
-                key={i}
-                style={{
-                  background: "rgba(255,255,255,0.02)",
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.05)",
-                  overflow: "hidden",
-                }}
-              >
+              <div key={i} style={{ background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)", overflow: "hidden" }}>
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "18px 20px",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
+                  style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
                 >
-                  <span
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 15,
-                      fontWeight: 500,
-                      color: "#f0e6d0",
-                      paddingRight: 16,
-                    }}
-                  >
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 15, fontWeight: 500, color: "#f0e6d0", paddingRight: 16 }}>
                     {faq.question}
                   </span>
-                  <ChevronDown
-                    size={18}
-                    color="rgba(240,230,208,0.5)"
-                    style={{
-                      transition: "transform 0.2s ease",
-                      transform: openFaq === i ? "rotate(180deg)" : "rotate(0deg)",
-                      flexShrink: 0,
-                    }}
-                  />
+                  <ChevronDown size={18} color="rgba(240,230,208,0.5)" style={{ transition: "transform 0.2s ease", transform: openFaq === i ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }} />
                 </button>
                 {openFaq === i && (
-                  <div
-                    style={{
-                      padding: "0 20px 18px",
-                    }}
-                  >
-                    <p
-                      style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: 14,
-                        color: "rgba(240,230,208,0.6)",
-                        lineHeight: 1.6,
-                        margin: 0,
-                      }}
-                    >
+                  <div style={{ padding: "0 20px 18px" }}>
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: "rgba(240,230,208,0.6)", lineHeight: 1.6, margin: 0 }}>
                       {faq.answer}
                     </p>
                   </div>
@@ -743,14 +498,7 @@ export default function PricingPage() {
 
         {/* Footer */}
         <div style={{ textAlign: "center", marginTop: 60 }}>
-          <p
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 12,
-              color: "rgba(240,230,208,0.35)",
-              letterSpacing: "0.02em",
-            }}
-          >
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "rgba(240,230,208,0.35)", letterSpacing: "0.02em" }}>
             Đăng ký hàng tháng • Hủy bất cứ lúc nào
           </p>
         </div>

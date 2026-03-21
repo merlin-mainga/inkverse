@@ -14,12 +14,17 @@ export async function POST(req: NextRequest) {
 
   const hashed = await bcrypt.hash(password, 12);
 
+  // Users registering before March 25 2026 23:59 ICT (UTC+7) get founder pricing
+  const FOUNDER_DEADLINE = new Date("2026-03-25T16:59:00Z"); // 23:59 ICT = 16:59 UTC
+  const pricingTier = new Date() < FOUNDER_DEADLINE ? "founder" : "standard";
+
   const user = await prisma.user.create({
     data: {
       name: name || email.split("@")[0],
       email,
       password: hashed,
       role: "user",
+      pricingTier,
     },
   });
 

@@ -5,11 +5,18 @@ import { prisma } from "@/lib/prisma";
 import { generatePaymentDescription } from "@/lib/sepay";
 import { randomUUID } from "crypto";
 
-// Valid subscription tiers and their prices in VND
-const TIER_PRICES: Record<string, number> = {
+// Founder pricing (locked before March 25, 2026)
+const FOUNDER_PRICES: Record<string, number> = {
   STARTER: 39000,
   PRO: 99000,
   MAX: 199000,
+};
+
+// Standard pricing (from April 1, 2026)
+const STANDARD_PRICES: Record<string, number> = {
+  STARTER: 47000,
+  PRO: 119000,
+  MAX: 239000,
 };
 
 export async function POST(req: NextRequest) {
@@ -24,16 +31,22 @@ export async function POST(req: NextRequest) {
 
     // 2. Parse and validate request
     const { tier } = await req.json();
-    if (!tier || !TIER_PRICES[tier]) {
+    if (!tier || !FOUNDER_PRICES[tier]) {
       return NextResponse.json(
         { error: "Invalid subscription tier" },
         { status: 400 }
       );
     }
 
-    const amount = TIER_PRICES[tier];
+    // 3. Fetch user pricingTier to determine correct price
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { pricingTier: true },
+    });
+    const prices = user?.pricingTier === "founder" ? FOUNDER_PRICES : STANDARD_PRICES;
+    const amount = prices[tier];
 
-    // 3. Check for existing pending order (unique constraint: userId + tier + status)
+    // 4. Check for existing pending order (unique constraint: userId + tier + status)
     const existingOrder = await prisma.paymentOrder.findFirst({
       where: { userId, tier, status: "pending" },
     });
@@ -55,11 +68,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 4. Generate internal order ID and payment description
+    // 5. Generate internal order ID and payment description
     const internalOrderId = randomUUID();
     const paymentDescription = generatePaymentDescription(internalOrderId);
 
-    // 5. Save order to DB
+    // 6. Save order to DB
     await prisma.paymentOrder.create({
       data: {
         id: internalOrderId,
@@ -71,7 +84,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 6. Generate QR code URL via SePay's public QR API (no auth required)
+    // 7. Generate QR code URL via SePay's public QR API (no auth required)
     const qrUrl = `https://qr.sepay.vn/img?acc=96247MAINGA&bank=BIDV&amount=${amount}&des=${encodeURIComponent(paymentDescription)}`;
 
     return NextResponse.json({

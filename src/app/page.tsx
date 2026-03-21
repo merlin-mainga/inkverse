@@ -646,31 +646,33 @@ export default function HomePage() {
 
   const fetchMangas = useCallback(async () => {
     setMangasLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set("limit", "50");
-      if (searchQuery.trim()) params.set("q", searchQuery.trim());
-      if (selectedGenre !== "Tất cả") params.set("genre", selectedGenre);
+    const params = new URLSearchParams();
+    params.set("limit", "50");
+    if (searchQuery.trim()) params.set("q", searchQuery.trim());
+    if (selectedGenre !== "Tất cả") params.set("genre", selectedGenre);
 
-      const url = `/api/manga?${params.toString()}`;
-      let res = await fetch(url, { cache: "no-store" });
+    const url = `/api/manga?${params.toString()}`;
+    const delays = [2000, 4000, 6000];
 
-      // 503 = cold start / DB temporarily unavailable, retry once
-      if (res.status === 503) {
-        console.log("Manga API 503, retrying...");
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        res = await fetch(url, { cache: "no-store" });
+    for (let attempt = 0; attempt <= delays.length; attempt++) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error(`manga ${res.status}`);
+        const data = await res.json();
+        setMangas(Array.isArray(data.mangas) ? data.mangas : []);
+        setMangasLoading(false);
+        return;
+      } catch (error) {
+        if (attempt < delays.length) {
+          console.log(`Manga API attempt ${attempt + 1} failed, retrying in ${delays[attempt]}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, delays[attempt]));
+          // Keep mangasLoading=true so skeleton shows during retry
+        } else {
+          console.error("Manga API failed after all retries:", error);
+          setMangas([]);
+          setMangasLoading(false);
+        }
       }
-
-      if (!res.ok) throw new Error(`manga ${res.status}`);
-
-      const data = await res.json();
-      setMangas(Array.isArray(data.mangas) ? data.mangas : []);
-    } catch (error) {
-      console.error("Manga error:", error);
-      setMangas([]);
-    } finally {
-      setMangasLoading(false);
     }
   }, [searchQuery, selectedGenre]);
 

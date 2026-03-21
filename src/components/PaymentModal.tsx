@@ -160,11 +160,21 @@ export default function PaymentModal({ isOpen, onClose, tier, amount }: PaymentM
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // Auto-redirect after payment success
+  useEffect(() => {
+    if (paymentStatus !== "paid") return;
+    const timer = setTimeout(async () => {
+      await update();
+      onClose();
+      router.push("/dashboard");
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [paymentStatus]);
+
   const handleSuccess = async () => {
-    // Reload session to get updated subscription tier
     await update();
     onClose();
-    router.refresh();
+    router.push("/dashboard");
   };
 
   if (!isOpen) return null;
@@ -689,58 +699,91 @@ export default function PaymentModal({ isOpen, onClose, tier, amount }: PaymentM
 
         {/* Paid Status */}
         {paymentStatus === "paid" && (
-          <div style={{ textAlign: "center", padding: "40px 0" }}>
+          <div style={{ textAlign: "center", padding: "32px 0 24px" }}>
+            {/* Confetti particles */}
+            <div style={{ position: "relative", marginBottom: 8 }}>
+              {["#c9a84c","#4ade80","#60a5fa","#f472b6","#fb923c"].map((color, i) => (
+                <div
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    width: 8,
+                    height: 8,
+                    borderRadius: i % 2 === 0 ? "50%" : 2,
+                    background: color,
+                    top: `${[-20,-30,-15,-25,-18][i]}px`,
+                    left: `${[10,25,50,70,85][i]}%`,
+                    animation: `confettiFall 1.2s ease-out ${i * 0.15}s both`,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Icon */}
             <div
               style={{
-                width: 64,
-                height: 64,
+                width: 72,
+                height: 72,
                 borderRadius: "50%",
-                background: "rgba(74,222,128,0.1)",
+                background: "linear-gradient(135deg, rgba(201,168,76,0.2), rgba(74,222,128,0.15))",
+                border: "2px solid #c9a84c",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 margin: "0 auto 16px",
+                animation: "successPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both",
               }}
             >
-              <Check size={32} color="#4ade80" strokeWidth={3} />
+              <Check size={36} color="#c9a84c" strokeWidth={2.5} />
             </div>
-            <h3
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 20,
-                fontWeight: 700,
-                color: "#4ade80",
-                marginBottom: 8,
-              }}
-            >
-              Thanh toán thành công!
+
+            {/* Title */}
+            <h3 style={{ fontFamily: "'Inter', sans-serif", fontSize: 22, fontWeight: 800, color: "#f0e6d0", marginBottom: 8 }}>
+              🎉 Chúc mừng!
             </h3>
-            <p
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 15, color: "rgba(240,230,208,0.7)", marginBottom: 20 }}>
+              Bạn đã nâng cấp lên
+            </p>
+
+            {/* PRO Badge */}
+            <div
               style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 14,
-                color: "rgba(240,230,208,0.6)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                background: "linear-gradient(135deg, #c9a84c, #a08030)",
+                borderRadius: 10,
+                padding: "10px 24px",
                 marginBottom: 24,
+                boxShadow: "0 0 24px rgba(201,168,76,0.5)",
+                animation: "successPop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.2s both",
               }}
             >
-              Cảm ơn bạn đã tin tưởng MAINGA
+              <span style={{ fontSize: 18 }}>✦</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 20, fontWeight: 800, color: "#0a0806", letterSpacing: "0.08em" }}>
+                {tier}
+              </span>
+            </div>
+
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "rgba(240,230,208,0.4)", marginBottom: 24 }}>
+              Đang chuyển về Dashboard...
             </p>
+
             <button
               onClick={handleSuccess}
               style={{
-                background: "linear-gradient(135deg, #c9a84c, #a08030)",
-                border: "none",
+                background: "transparent",
+                border: "1px solid rgba(201,168,76,0.4)",
                 borderRadius: 10,
-                padding: "14px 32px",
-                color: "#0a0806",
+                padding: "10px 24px",
+                color: "#c9a84c",
                 fontFamily: "'Inter', sans-serif",
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: "pointer",
-                boxShadow: "0 4px 20px rgba(201,168,76,0.3)",
               }}
             >
-              Bắt đầu sáng tạo →
+              Đến Dashboard ngay →
             </button>
           </div>
         )}
@@ -754,6 +797,14 @@ export default function PaymentModal({ isOpen, onClose, tier, amount }: PaymentM
           @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
+          }
+          @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(60px) rotate(360deg); opacity: 0; }
+          }
+          @keyframes successPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
           }
         `}</style>
 

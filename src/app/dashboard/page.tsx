@@ -1429,18 +1429,42 @@ async function handleSaveCharacterFromImage() {
           Chào mừng trở lại
         </div>
 
-        <h1
-          style={{
-            fontFamily: "'Inter', sans-serif",
-            fontSize: "clamp(24px, 4vw, 44px)",
-            fontWeight: 800,
-            letterSpacing: "-0.02em",
-            color: "#f5eedf",
-            lineHeight: 1.1,
-          }}
-        >
-          {session?.user?.name || "Tác Giả"}
-        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+          <h1
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "clamp(24px, 4vw, 44px)",
+              fontWeight: 800,
+              letterSpacing: "-0.02em",
+              color: "#f5eedf",
+              lineHeight: 1.1,
+              margin: 0,
+            }}
+          >
+            {session?.user?.name || "Tác Giả"}
+          </h1>
+          {(session?.user as any)?.subscriptionTier && (session?.user as any)?.subscriptionTier !== "FREE" && (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                background: "linear-gradient(135deg, #c9a84c, #a08030)",
+                color: "#0a0806",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 13,
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                padding: "5px 12px",
+                borderRadius: 8,
+                boxShadow: "0 2px 12px rgba(201,168,76,0.35)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              ✦ {(session?.user as any)?.subscriptionTier}
+            </span>
+          )}
+        </div>
       </div>
 
       {activeTab === "overview" && (

@@ -63,11 +63,12 @@ export const authOptions: NextAuthOptions = {
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true },
+          select: { role: true, subscriptionTier: true },
         });
 
         if (dbUser) {
           token.role = dbUser.role;
+          token.subscriptionTier = dbUser.subscriptionTier;
         }
       }
 
@@ -78,6 +79,7 @@ export const authOptions: NextAuthOptions = {
       if (session?.user) {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
+        (session.user as any).subscriptionTier = token.subscriptionTier;
         (session.user as any).email = token.email;
         (session.user as any).name = token.name;
       }

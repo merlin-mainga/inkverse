@@ -145,7 +145,8 @@ Return STRICT JSON only.
 
   console.log("[analyze-scene] fal raw result:", JSON.stringify(result));
 
-  const rawOutput = result?.output;
+  // @fal-ai/client wraps model output in result.data
+  const rawOutput = result?.data?.output ?? result?.output;
   if (!rawOutput || typeof rawOutput !== "string") {
     console.error("[analyze-scene] rawOutput invalid:", typeof rawOutput, rawOutput);
     return null;

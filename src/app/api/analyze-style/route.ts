@@ -66,14 +66,39 @@ Rules:
 
   const fullPrompt = `${instruction}\n\nUSER STYLE:\n${safeStyle}`;
 
-  const result: any = await fal.subscribe("fal-ai/any-llm", {
-    input: {
-      model: "google/gemini-flash-1.5",
-      prompt: fullPrompt,
-    },
-  });
+  let result: any;
+  try {
+    result = await fal.subscribe("fal-ai/any-llm", {
+      input: {
+        model: "google/gemini-flash-1.5",
+        prompt: fullPrompt,
+      },
+    });
+  } catch (falErr: any) {
+    console.error("[analyze-style] fal.subscribe threw:", falErr?.message, JSON.stringify(falErr));
+    throw falErr;
+  }
 
-  return result?.output;
+  console.log("[analyze-style] fal raw result:", JSON.stringify(result));
+
+  // @fal-ai/client wraps model output in result.data
+  const rawOutput = result?.data?.output ?? result?.output;
+  if (!rawOutput || typeof rawOutput !== "string") {
+    console.error("[analyze-style] rawOutput invalid:", typeof rawOutput, rawOutput);
+    return null;
+  }
+
+  const cleaned = rawOutput
+    .replace(/^```(?:json)?\s*/im, "")
+    .replace(/\s*```\s*$/im, "")
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (parseErr: any) {
+    console.error("[analyze-style] JSON.parse failed:", parseErr?.message, "| cleaned:", cleaned.slice(0, 300));
+    return null;
+  }
 }
 
 async function callStyleAnalyzerWithRetry(style: string) {
@@ -84,7 +109,7 @@ async function callStyleAnalyzerWithRetry(style: string) {
       const data = await callStyleAnalyzer(style);
       lastData = data;
 
-      if (data && typeof data === "object" && data.style_prompt) {
+      if (data && typeof data === "object" && !Array.isArray(data) && data.style_prompt) {
         return { ok: true, data };
       }
     } catch (err) {

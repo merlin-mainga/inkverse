@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { 
-  verifySePayWebhookSignature, 
-  parsePaymentDescription 
+import { prisma } from "@/lib/prisma";
+import {
+  verifySePayWebhookSignature,
+  parsePaymentDescription
 } from "@/lib/sepay";
-
-const prisma = new PrismaClient();
 
 // Mana amounts for each tier
 const MANA_BY_TIER: Record<string, number> = {

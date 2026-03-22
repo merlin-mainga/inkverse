@@ -39,14 +39,59 @@ function getResetCountdown() {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function getPlatformIcon(url: string | null): string {
-  if (!url) return "🔗";
-  if (url.includes("tiktok.com")) return "🎵";
-  if (url.includes("youtube.com") || url.includes("youtu.be")) return "▶️";
-  if (url.includes("instagram.com")) return "📸";
-  if (url.includes("facebook.com") || url.includes("fb.com")) return "👥";
-  if (url.includes("twitter.com") || url.includes("x.com")) return "🐦";
-  return "🔗";
+function PlatformIcon({ url, size = 28 }: { url: string | null; size?: number }) {
+  const s = { width: size, height: size, flexShrink: 0 } as React.CSSProperties;
+
+  if (url?.includes("tiktok.com")) return (
+    <svg style={s} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.75a8.18 8.18 0 004.79 1.54V6.85a4.85 4.85 0 01-1.02-.16z" fill="#fff"/>
+    </svg>
+  );
+
+  if (url?.includes("youtube.com") || url?.includes("youtu.be")) return (
+    <svg style={s} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 00.5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 002.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81z" fill="#FF0000"/>
+      <path d="M9.75 15.02V8.98L15.5 12l-5.75 3.02z" fill="#fff"/>
+    </svg>
+  );
+
+  if (url?.includes("facebook.com") || url?.includes("fb.com")) return (
+    <svg style={s} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" fill="#1877F2"/>
+      <path d="M16.671 15.563l.532-3.49h-3.328V9.804c0-.956.465-1.887 1.956-1.887h1.513V4.948s-1.374-.235-2.686-.235c-2.741 0-4.533 1.672-4.533 4.697v2.663H7.078v3.49h3.047V24a12.12 12.12 0 003.75 0v-8.437h2.796z" fill="#fff"/>
+    </svg>
+  );
+
+  if (url?.includes("instagram.com")) return (
+    <svg style={s} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="ig-g1" cx="30%" cy="107%" r="150%">
+          <stop offset="0%" stopColor="#fdf497"/>
+          <stop offset="10%" stopColor="#fdf497"/>
+          <stop offset="50%" stopColor="#fd5949"/>
+          <stop offset="68%" stopColor="#d6249f"/>
+          <stop offset="100%" stopColor="#285AEB"/>
+        </radialGradient>
+      </defs>
+      <rect width="24" height="24" rx="6" fill="url(#ig-g1)"/>
+      <circle cx="12" cy="12" r="4.5" fill="none" stroke="#fff" strokeWidth="2"/>
+      <circle cx="17.5" cy="6.5" r="1.2" fill="#fff"/>
+    </svg>
+  );
+
+  if (url?.includes("twitter.com") || url?.includes("x.com")) return (
+    <svg style={s} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <rect width="24" height="24" rx="4" fill="#000"/>
+      <path d="M13.14 10.94L18.96 4h-1.38l-5.06 5.88L8.24 4H4l6.1 8.88L4 20h1.38l5.33-6.2L15.76 20H20l-6.86-9.06zm-1.89 2.2l-.62-.88-4.92-7.04h2.12l3.97 5.68.62.88 5.16 7.38h-2.12l-4.21-6.02z" fill="#fff"/>
+    </svg>
+  );
+
+  return (
+    <svg style={s} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="11" stroke="rgba(201,168,76,0.5)" strokeWidth="1.5"/>
+      <path d="M12 7v5l3 3" stroke="rgba(201,168,76,0.7)" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
 }
 
 const GROUPS: { key: string; label: string; types: string[]; hasReset?: "daily" | "weekly" }[] = [
@@ -460,7 +505,6 @@ export default function ManaPanel() {
               )}
 
               {visibleBonusQuests.map((q) => {
-                const icon = getPlatformIcon(q.bonusUrl);
                 const urlEditVal = adminUrlEdits[q.key] ?? q.bonusUrl ?? "";
                 const isEditing = q.key in adminUrlEdits;
 
@@ -477,7 +521,7 @@ export default function ManaPanel() {
                   }}>
                     {/* Top row: icon + title + mana */}
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                      <span style={{ fontSize: 20, flexShrink: 0 }}>{icon}</span>
+                      <PlatformIcon url={q.bonusUrl} size={28} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
                           fontFamily: "'Inter', sans-serif",

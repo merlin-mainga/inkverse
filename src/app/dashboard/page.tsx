@@ -1406,7 +1406,7 @@ async function handleSaveCharacterFromImage() {
       gap: 16,
       alignItems: "flex-start",
       width: "100%",
-      paddingRight: 276,
+      paddingRight: 320,
     }}
   >
     <div

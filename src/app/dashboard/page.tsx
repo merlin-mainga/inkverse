@@ -1402,19 +1402,19 @@ async function handleSaveCharacterFromImage() {
 >
   <div
     style={{
-      display: "flex",
+      display: "grid",
+      gridTemplateColumns: "260px 1fr 300px",
       gap: 32,
-      alignItems: "flex-start",
+      alignItems: "start",
       width: "100%",
     }}
   >
     <div
       style={{
-        width: 260,
-        flexShrink: 0,
+        gridColumn: 1,
         position: "sticky",
         top: 88,
-        alignSelf: "flex-start",
+        alignSelf: "start",
       }}
     >
       <div
@@ -1526,7 +1526,7 @@ async function handleSaveCharacterFromImage() {
 
     <div
       style={{
-        flex: 1,
+        gridColumn: 2,
         minWidth: 0,
       }}
     >
@@ -5660,7 +5660,7 @@ async function handleSaveCharacterFromImage() {
         )}
       </div>
     </div>
-    <div style={{ width: 300, flexShrink: 0, position: "sticky", top: 88, alignSelf: "flex-start" }}>
+    <div style={{ gridColumn: 3, position: "sticky", top: 88, alignSelf: "start" }}>
       <ManaPanel />
     </div>
   </div>

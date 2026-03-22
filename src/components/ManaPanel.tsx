@@ -167,7 +167,11 @@ export default function ManaPanel() {
   if (loading) {
     return (
       <div style={{
-        width: 300,
+        position: "fixed",
+        right: 16,
+        top: 80,
+        width: 260,
+        zIndex: 40,
         background: "rgba(255,255,255,0.025)",
         border: "1px solid rgba(201,168,76,0.1)",
         borderRadius: 18,
@@ -195,6 +199,13 @@ export default function ManaPanel() {
   return (
     <>
       <div style={{
+        position: "fixed",
+        right: 16,
+        top: 80,
+        width: 260,
+        maxHeight: "calc(100vh - 100px)",
+        overflowY: "auto",
+        zIndex: 40,
         display: "flex",
         flexDirection: "column",
         gap: 0,

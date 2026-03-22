@@ -1402,11 +1402,11 @@ async function handleSaveCharacterFromImage() {
 >
   <div
     style={{
-      display: "grid",
-      gridTemplateColumns: "260px 1fr 260px",
-      gap: "16px",
-      alignItems: "start",
+      display: "flex",
+      gap: 16,
+      alignItems: "flex-start",
       width: "100%",
+      paddingRight: 276,
     }}
   >
     <div
@@ -5658,9 +5658,7 @@ async function handleSaveCharacterFromImage() {
         )}
       </div>
     </div>
-    <div style={{ position: "sticky", top: 16 }}>
-      <ManaPanel />
-    </div>
+    <ManaPanel />
   </div>
 
   {selectedCharacter && (

@@ -52,6 +52,7 @@ export default function ManaPanel() {
   const isAdmin = (session?.user as any)?.role === "admin";
 
   const [data, setData] = useState<QuestsResponse | null>(null);
+  const [currentMana, setCurrentMana] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState(getResetCountdown());
 
@@ -78,7 +79,17 @@ export default function ManaPanel() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchQuests(); }, [fetchQuests]);
+  const fetchMana = useCallback(async () => {
+    try {
+      const res = await fetch("/api/mana/status");
+      if (res.ok) {
+        const d = await res.json();
+        setCurrentMana(d.mana ?? null);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchQuests(); fetchMana(); }, [fetchQuests, fetchMana]);
 
   useEffect(() => {
     const t = setInterval(() => setCountdown(getResetCountdown()), 1000);
@@ -95,7 +106,7 @@ export default function ManaPanel() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ questKey }),
     });
-    if (res.ok) await fetchQuests();
+    if (res.ok) { await fetchQuests(); fetchMana(); }
   }
 
   async function handleBonusStart(q: QuestData) {
@@ -130,7 +141,7 @@ export default function ManaPanel() {
           body: JSON.stringify({ questKey: q.key }),
         });
         const vData = await vRes.json();
-        if (vRes.ok) { setBonusResult({ mana: vData.manaEarned }); await fetchQuests(); }
+        if (vRes.ok) { setBonusResult({ mana: vData.manaEarned }); await fetchQuests(); fetchMana(); }
       }
     }, 500);
   }
@@ -184,11 +195,6 @@ export default function ManaPanel() {
   return (
     <>
       <div style={{
-        width: 300,
-        flexShrink: 0,
-        position: "sticky",
-        top: 88,
-        alignSelf: "start",
         display: "flex",
         flexDirection: "column",
         gap: 0,
@@ -198,35 +204,54 @@ export default function ManaPanel() {
           background: "linear-gradient(135deg, rgba(201,168,76,0.14) 0%, rgba(139,105,20,0.10) 100%)",
           border: "1px solid rgba(201,168,76,0.22)",
           borderRadius: 16,
-          padding: "18px 20px",
+          padding: "16px 20px",
           marginBottom: 10,
         }}>
           <div style={{
             fontFamily: "'Cinzel', serif",
-            fontSize: 11,
-            letterSpacing: "0.2em",
+            fontSize: 10,
+            letterSpacing: "0.22em",
             color: "#c9a84c",
             textTransform: "uppercase",
-            marginBottom: 6,
+            marginBottom: 10,
           }}>
             ⚡ Kiếm Mana
           </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+
+          {/* Total mana */}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 6 }}>
             <span style={{
               fontFamily: "'Inter', sans-serif",
-              fontSize: 26,
+              fontSize: 28,
               fontWeight: 800,
               color: "#c9a84c",
+              lineHeight: 1,
             }}>
-              +{data.todayMana}
+              {currentMana !== null ? currentMana.toLocaleString() : "—"}
             </span>
             <span style={{
-              fontFamily: "'Inter', sans-serif",
+              fontFamily: "'Cinzel', serif",
               fontSize: 11,
-              color: "rgba(240,230,208,0.4)",
+              color: "rgba(201,168,76,0.6)",
             }}>
-              Mana hôm nay · reset {countdown}
+              ✦ Mana
             </span>
+          </div>
+
+          {/* Today earned + reset */}
+          <div style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: 11,
+            color: "rgba(240,230,208,0.4)",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}>
+            <span style={{ color: data.todayMana > 0 ? "#a8d88a" : "rgba(240,230,208,0.35)" }}>
+              +{data.todayMana} hôm nay
+            </span>
+            <span style={{ color: "rgba(240,230,208,0.2)" }}>·</span>
+            <span>reset {countdown}</span>
           </div>
         </div>
 

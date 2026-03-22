@@ -8,6 +8,7 @@ import CoverEditor from "@/components/CoverEditor";
 import CharacterDetailModal from "@/components/CharacterDetailModal";
 import UpgradeModal from "@/components/UpgradeModal";
 import AuthorGateModal from "@/components/AuthorGateModal";
+import QuestTab from "@/components/QuestTab";
 
 const GENRES = [
   "Action",
@@ -77,7 +78,7 @@ function DashboardMenuIcon({
   type,
   active,
 }: {
-  type: "overview" | "mangas" | "ai-manga" | "mainga-lab";
+  type: "overview" | "mangas" | "ai-manga" | "mainga-lab" | "quests";
   active: boolean;
 }) {
   const stroke = active ? "#080808" : "#c9a84c";
@@ -226,7 +227,7 @@ export default function DashboardPage() {
 
   const [mangas, setMangas] = useState<MangaItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "mangas" | "ai-manga" | "mainga-lab">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "mangas" | "ai-manga" | "mainga-lab" | "quests">("overview");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [labCharacters, setLabCharacters] = useState<CharacterProfile[]>([]);
   const [labLoading, setLabLoading] = useState(false);
@@ -1444,9 +1445,10 @@ async function handleSaveCharacterFromImage() {
           ["mangas", "Manga Của Tôi", "Quản lý manga và chapter"],
           ["ai-manga", "AI Manga Generator", "Tạo ảnh manga fidelity"],
           ["mainga-lab", "Mainga Lab", "Character canon và tools"],
+          ["quests", "Nhiệm Vụ", "Kiếm Mana qua các quest"],
         ].map(([tab, label, hint]) => {
           const active = activeTab === tab;
-          const tabKey = tab as "overview" | "mangas" | "ai-manga" | "mainga-lab";
+          const tabKey = tab as "overview" | "mangas" | "ai-manga" | "mainga-lab" | "quests";
 
           return (
             <button
@@ -5659,6 +5661,21 @@ async function handleSaveCharacterFromImage() {
       </div>
     </div>
   </div>
+  {activeTab === "quests" && (
+    <div className="fade-up" style={{ padding: "24px 0" }}>
+      <div style={{
+        fontFamily: "'Cinzel', serif",
+        fontSize: 18,
+        color: "#c9a84c",
+        letterSpacing: "0.06em",
+        marginBottom: 24,
+      }}>
+        Nhiệm Vụ & Phần Thưởng
+      </div>
+      <QuestTab isAdmin={(session?.user as any)?.role === "admin"} />
+    </div>
+  )}
+
   {selectedCharacter && (
     <CharacterDetailModal
       character={selectedCharacter as CharacterProfile}

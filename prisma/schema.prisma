@@ -38,6 +38,7 @@ model User {
   sessions         Session[]
   characters       CharacterProfile[]
   paymentOrders    PaymentOrder[]
+  userQuests       UserQuest[]
 }
 
 model CharacterProfile {
@@ -201,4 +202,31 @@ model PaymentTransaction {
   id            String   @id @default(uuid())
   transactionId String   @unique
   processedAt   DateTime @default(now())
+}
+
+model Quest {
+  id          String      @id @default(uuid())
+  type        String      // "onboarding" | "daily" | "weekly" | "milestone" | "bonus"
+  key         String      @unique
+  title       String
+  description String
+  mana        Int
+  isActive    Boolean     @default(true)
+  resetPeriod String?     // "daily" | "weekly" | null
+  bonusUrl    String?
+  createdAt   DateTime    @default(now())
+  userQuests  UserQuest[]
+}
+
+model UserQuest {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questId     String
+  quest       Quest     @relation(fields: [questId], references: [id], onDelete: Cascade)
+  completedAt DateTime?
+  startedAt   DateTime?
+  periodKey   String    @default("") // "" one-time, "2024-03-22" daily, "2024-W12" weekly
+
+  @@unique([userId, questId, periodKey])
 }

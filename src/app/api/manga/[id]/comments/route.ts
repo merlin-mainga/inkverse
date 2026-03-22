@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { completeQuest } from "@/lib/questHelper";
 
 export async function GET(
   _: NextRequest,
@@ -38,5 +39,6 @@ export async function POST(
     include: { user: { select: { name: true, image: true } } },
   });
 
+  completeQuest((session.user as any).id, "daily_engage").catch(() => {});
   return NextResponse.json(comment, { status: 201 });
 }

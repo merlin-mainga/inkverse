@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { completeQuest } from "@/lib/questHelper";
 
 export async function GET(
   _: NextRequest,
@@ -36,10 +37,16 @@ export async function POST(
     return NextResponse.json({ error: "Không tìm thấy manga" }, { status: 404 });
 
   const { title, chapterNum, pages } = await req.json();
+  const userId = (session.user as any).id;
 
   const chapter = await prisma.chapter.create({
     data: { title, chapterNum, pages, mangaId: id },
   });
+
+  // Complete weekly_chapter if ≥10 pages
+  if (Array.isArray(pages) && pages.length >= 10) {
+    completeQuest(userId, "weekly_chapter").catch(() => {});
+  }
 
   return NextResponse.json(chapter, { status: 201 });
 }

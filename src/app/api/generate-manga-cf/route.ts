@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import fal from "@/lib/fal";
 import { v2 as cloudinary } from "cloudinary";
+import { completeQuest } from "@/lib/questHelper";
 
 
 async function uploadToCloudinary(falUrl: string): Promise<string> {
@@ -460,6 +461,9 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    const userId = (session.user as any).id;
+    completeQuest(userId, "first_ai_image").catch(() => {});
 
     return NextResponse.json({
       images,

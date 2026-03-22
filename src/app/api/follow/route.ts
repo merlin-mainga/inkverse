@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { completeQuest } from "@/lib/questHelper";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
     data: { userId, mangaId },
   });
 
+  completeQuest(userId, "first_follow").catch(() => {});
   return NextResponse.json({ following: true });
 }
 

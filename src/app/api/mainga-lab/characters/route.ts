@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { completeQuest } from "@/lib/questHelper";
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -193,6 +194,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    completeQuest(auth.userId, "first_character").catch(() => {});
     return NextResponse.json({
       ok: true,
       character,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { completeQuest } from "@/lib/questHelper";
 
 export async function POST(
   req: NextRequest,
@@ -24,5 +25,6 @@ export async function POST(
     create: { score, userId, mangaId: id },
   });
 
+  completeQuest(userId, "daily_engage").catch(() => {});
   return NextResponse.json(rating);
 }

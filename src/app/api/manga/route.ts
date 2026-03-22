@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { completeQuest } from "@/lib/questHelper";
 
 export const dynamic = "force-dynamic";
 
@@ -214,6 +215,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    completeQuest(userId, "first_manga").catch(() => {});
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
     console.error("POST /api/manga error:", error);

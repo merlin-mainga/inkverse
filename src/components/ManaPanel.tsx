@@ -39,12 +39,21 @@ function getResetCountdown() {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+function getPlatformIcon(url: string | null): string {
+  if (!url) return "🔗";
+  if (url.includes("tiktok.com")) return "🎵";
+  if (url.includes("youtube.com") || url.includes("youtu.be")) return "▶️";
+  if (url.includes("instagram.com")) return "📸";
+  if (url.includes("facebook.com") || url.includes("fb.com")) return "👥";
+  if (url.includes("twitter.com") || url.includes("x.com")) return "🐦";
+  return "🔗";
+}
+
 const GROUPS: { key: string; label: string; types: string[]; hasReset?: "daily" | "weekly" }[] = [
   { key: "daily",     label: "Hàng Ngày",     types: ["daily"],       hasReset: "daily" },
   { key: "start",     label: "Bắt Đầu",       types: ["onboarding"] },
   { key: "weekly",    label: "Nhiệm Vụ Tuần", types: ["weekly"],      hasReset: "weekly" },
   { key: "milestone", label: "Dấu Mốc",       types: ["milestone"] },
-  { key: "bonus",     label: "Kiếm Thêm",     types: ["bonus"] },
 ];
 
 export default function ManaPanel() {
@@ -56,9 +65,7 @@ export default function ManaPanel() {
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState(getResetCountdown());
 
-  // which groups are expanded
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ daily: true });
-  // which groups show full list (beyond 2 items)
   const [showAll, setShowAll] = useState<Record<string, boolean>>({});
 
   // Bonus flow
@@ -66,10 +73,14 @@ export default function ManaPanel() {
   const [bonusProgress, setBonusProgress] = useState(0);
   const [bonusMessage, setBonusMessage] = useState("");
   const [bonusResult, setBonusResult] = useState<{ mana: number } | null>(null);
+  const [bonusError, setBonusError] = useState<string | null>(null);
   const bonusTimerRef = useRef<NodeJS.Timeout | null>(null);
   const bonusStartTimeRef = useRef<number>(0);
 
+  // Admin
   const [adminSaving, setAdminSaving] = useState<string | null>(null);
+  const [adminUrlEdits, setAdminUrlEdits] = useState<Record<string, string>>({});
+  const [adminUrlSaving, setAdminUrlSaving] = useState<string | null>(null);
 
   const fetchQuests = useCallback(async () => {
     try {
@@ -125,6 +136,7 @@ export default function ManaPanel() {
     setBonusModal({ key: q.key, title: q.title, mana: q.mana, url: q.bonusUrl });
     setBonusProgress(0);
     setBonusResult(null);
+    setBonusError(null);
     setBonusMessage(BONUS_MESSAGES[0]);
     bonusStartTimeRef.current = Date.now();
     if (bonusTimerRef.current) clearInterval(bonusTimerRef.current);
@@ -141,7 +153,13 @@ export default function ManaPanel() {
           body: JSON.stringify({ questKey: q.key }),
         });
         const vData = await vRes.json();
-        if (vRes.ok) { setBonusResult({ mana: vData.manaEarned }); await fetchQuests(); fetchMana(); }
+        if (vRes.ok) {
+          setBonusResult({ mana: vData.manaEarned });
+          await fetchQuests();
+          fetchMana();
+        } else {
+          setBonusError(vData?.error ?? "Xác minh thất bại. Vui lòng thử lại.");
+        }
       }
     }, 500);
   }
@@ -150,6 +168,7 @@ export default function ManaPanel() {
     if (bonusTimerRef.current) clearInterval(bonusTimerRef.current);
     setBonusModal(null);
     setBonusResult(null);
+    setBonusError(null);
     setBonusProgress(0);
   }
 
@@ -162,6 +181,20 @@ export default function ManaPanel() {
     });
     await fetchQuests();
     setAdminSaving(null);
+  }
+
+  async function handleAdminUrlSave(questKey: string) {
+    const url = adminUrlEdits[questKey];
+    if (!url) return;
+    setAdminUrlSaving(questKey);
+    await fetch("/api/quests/admin", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questKey, bonusUrl: url }),
+    });
+    await fetchQuests();
+    setAdminUrlSaving(null);
+    setAdminUrlEdits((prev) => { const n = { ...prev }; delete n[questKey]; return n; });
   }
 
   if (loading) {
@@ -194,7 +227,9 @@ export default function ManaPanel() {
     questMap[q.type].push(q);
   }
 
-  const totalMana = data.totalMana ?? 0;
+  const allBonusQuests = questMap["bonus"] ?? [];
+  const visibleBonusQuests = isAdmin ? allBonusQuests : allBonusQuests.filter((q) => q.isActive);
+  const showBonusSection = isAdmin || visibleBonusQuests.length > 0;
 
   return (
     <>
@@ -229,7 +264,6 @@ export default function ManaPanel() {
             ⚡ Kiếm Mana
           </div>
 
-          {/* Total mana */}
           <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 6 }}>
             <span style={{
               fontFamily: "'Inter', sans-serif",
@@ -249,7 +283,6 @@ export default function ManaPanel() {
             </span>
           </div>
 
-          {/* Today earned + reset */}
           <div style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: 11,
@@ -266,21 +299,16 @@ export default function ManaPanel() {
           </div>
         </div>
 
-        {/* Quest groups */}
+        {/* Regular quest groups */}
         <div style={{
           background: "rgba(255,255,255,0.022)",
           border: "1px solid rgba(201,168,76,0.09)",
           borderRadius: 16,
           overflow: "hidden",
+          marginBottom: showBonusSection ? 10 : 0,
         }}>
           {GROUPS.map((group, gi) => {
-            const quests = group.types.flatMap((t) => questMap[t] ?? [])
-              .filter((q) => {
-                // For bonus: only show active ones
-                if (q.type === "bonus" && !q.isActive) return false;
-                return true;
-              });
-
+            const quests = group.types.flatMap((t) => questMap[t] ?? []);
             if (quests.length === 0) return null;
 
             const isOpen = !!expanded[group.key];
@@ -289,7 +317,6 @@ export default function ManaPanel() {
 
             return (
               <div key={group.key} style={{ borderBottom: gi < GROUPS.length - 1 ? "1px solid rgba(240,230,208,0.06)" : "none" }}>
-                {/* Group header */}
                 <button
                   onClick={() => toggleGroup(group.key)}
                   style={{
@@ -344,7 +371,6 @@ export default function ManaPanel() {
                   </div>
                 </button>
 
-                {/* Quest list */}
                 {isOpen && (
                   <div style={{ padding: "0 10px 10px" }}>
                     {visibleQuests.map((q) => (
@@ -384,12 +410,213 @@ export default function ManaPanel() {
             );
           })}
         </div>
+
+        {/* Kiếm Thêm section */}
+        {showBonusSection && (
+          <div style={{
+            background: "rgba(255,255,255,0.022)",
+            border: "1px solid rgba(201,168,76,0.09)",
+            borderRadius: 16,
+            overflow: "hidden",
+          }}>
+            {/* Section header */}
+            <div style={{
+              padding: "13px 16px 10px",
+              borderBottom: "1px solid rgba(240,230,208,0.06)",
+            }}>
+              <div style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#c9a84c",
+                letterSpacing: "0.02em",
+              }}>
+                ⚡ Kiếm Thêm
+              </div>
+              {isAdmin && (
+                <div style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: 10,
+                  color: "rgba(240,230,208,0.3)",
+                  marginTop: 2,
+                }}>
+                  Admin — {allBonusQuests.filter((q) => q.isActive).length}/{allBonusQuests.length} active
+                </div>
+              )}
+            </div>
+
+            {/* Bonus quest cards */}
+            <div style={{ padding: "8px 10px 10px" }}>
+              {visibleBonusQuests.length === 0 && isAdmin && (
+                <div style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: 11,
+                  color: "rgba(240,230,208,0.3)",
+                  textAlign: "center",
+                  padding: "12px 0",
+                }}>
+                  Chưa có bonus quest nào
+                </div>
+              )}
+
+              {visibleBonusQuests.map((q) => {
+                const icon = getPlatformIcon(q.bonusUrl);
+                const urlEditVal = adminUrlEdits[q.key] ?? q.bonusUrl ?? "";
+                const isEditing = q.key in adminUrlEdits;
+
+                return (
+                  <div key={q.key} style={{
+                    borderRadius: 12,
+                    background: q.isActive
+                      ? "linear-gradient(135deg, rgba(201,168,76,0.07), rgba(201,168,76,0.03))"
+                      : "rgba(255,255,255,0.02)",
+                    border: `1px solid ${q.isActive ? "rgba(201,168,76,0.18)" : "rgba(240,230,208,0.06)"}`,
+                    padding: "12px 12px 10px",
+                    marginBottom: 6,
+                    opacity: isAdmin && !q.isActive ? 0.6 : 1,
+                  }}>
+                    {/* Top row: icon + title + mana */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: 20, flexShrink: 0 }}>{icon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "rgba(240,230,208,0.9)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}>
+                          {q.title}
+                        </div>
+                        <div style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: 11,
+                          color: "#c9a84c",
+                          fontWeight: 700,
+                          marginTop: 1,
+                        }}>
+                          +{q.mana} Mana
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action button */}
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      {q.completed ? (
+                        <div style={{
+                          flex: 1,
+                          padding: "7px 10px",
+                          borderRadius: 8,
+                          background: "rgba(201,168,76,0.08)",
+                          border: "1px solid rgba(201,168,76,0.18)",
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: 11,
+                          color: "#c9a84c",
+                          textAlign: "center",
+                        }}>
+                          ✅ Đã xong
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleBonusStart(q)}
+                          disabled={!q.bonusUrl}
+                          style={{
+                            flex: 1,
+                            padding: "7px 10px",
+                            borderRadius: 8,
+                            background: q.bonusUrl
+                              ? "linear-gradient(135deg, #c9a84c, #e8c96a)"
+                              : "rgba(240,230,208,0.08)",
+                            border: "none",
+                            color: q.bonusUrl ? "#080808" : "rgba(240,230,208,0.3)",
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: q.bonusUrl ? "pointer" : "default",
+                          }}
+                        >
+                          ⚡ Thực Hiện
+                        </button>
+                      )}
+
+                      {/* Admin toggle */}
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleAdminToggle(q.key, q.isActive)}
+                          disabled={adminSaving === q.key}
+                          style={{
+                            padding: "6px 10px",
+                            borderRadius: 7,
+                            background: q.isActive ? "rgba(168,216,138,0.15)" : "rgba(240,230,208,0.07)",
+                            border: `1px solid ${q.isActive ? "rgba(168,216,138,0.3)" : "rgba(240,230,208,0.12)"}`,
+                            color: q.isActive ? "#a8d88a" : "rgba(240,230,208,0.4)",
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: 10,
+                            cursor: "pointer",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {adminSaving === q.key ? "..." : q.isActive ? "on" : "off"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Admin URL editor */}
+                    {isAdmin && (
+                      <div style={{ marginTop: 8 }}>
+                        <input
+                          value={urlEditVal}
+                          onChange={(e) => setAdminUrlEdits((prev) => ({ ...prev, [q.key]: e.target.value }))}
+                          placeholder="https://..."
+                          style={{
+                            width: "100%",
+                            padding: "5px 8px",
+                            borderRadius: 6,
+                            background: "rgba(255,255,255,0.06)",
+                            border: `1px solid ${isEditing ? "rgba(201,168,76,0.4)" : "rgba(240,230,208,0.1)"}`,
+                            color: "rgba(240,230,208,0.8)",
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: 10,
+                            outline: "none",
+                            boxSizing: "border-box",
+                          }}
+                        />
+                        {isEditing && (
+                          <button
+                            onClick={() => handleAdminUrlSave(q.key)}
+                            disabled={adminUrlSaving === q.key}
+                            style={{
+                              marginTop: 4,
+                              width: "100%",
+                              padding: "4px 8px",
+                              borderRadius: 6,
+                              background: "rgba(201,168,76,0.2)",
+                              border: "1px solid rgba(201,168,76,0.35)",
+                              color: "#c9a84c",
+                              fontFamily: "'Inter', sans-serif",
+                              fontSize: 10,
+                              cursor: "pointer",
+                            }}
+                          >
+                            {adminUrlSaving === q.key ? "Đang lưu..." : "💾 Lưu URL"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bonus verification modal */}
       {bonusModal && (
         <div
-          onClick={(e) => { if (e.target === e.currentTarget && bonusResult) closeBonusModal(); }}
+          onClick={(e) => { if (e.target === e.currentTarget && (bonusResult || bonusError)) closeBonusModal(); }}
           style={{
             position: "fixed", inset: 0,
             background: "rgba(0,0,0,0.88)",
@@ -411,8 +638,11 @@ export default function ManaPanel() {
                 <div style={{ fontFamily: "'Cinzel', serif", fontSize: 17, color: "#c9a84c", marginBottom: 8 }}>
                   Hoàn thành!
                 </div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 26, fontWeight: 700, color: "#c9a84c", marginBottom: 20 }}>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 26, fontWeight: 700, color: "#c9a84c", marginBottom: 4 }}>
                   +{bonusResult.mana} Mana
+                </div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#a8d88a", marginBottom: 20 }}>
+                  ✅ Xác minh thành công
                 </div>
                 <button onClick={closeBonusModal} style={{
                   padding: "11px 28px", borderRadius: 10,
@@ -422,6 +652,41 @@ export default function ManaPanel() {
                 }}>
                   Đóng
                 </button>
+              </>
+            ) : bonusError ? (
+              <>
+                <div style={{ fontSize: 44, marginBottom: 12 }}>❌</div>
+                <div style={{ fontFamily: "'Cinzel', serif", fontSize: 16, color: "#c9a84c", marginBottom: 10 }}>
+                  Xác minh thất bại
+                </div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "rgba(240,230,208,0.55)", marginBottom: 20 }}>
+                  {bonusError}
+                </div>
+                <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+                  <button onClick={closeBonusModal} style={{
+                    padding: "10px 20px", borderRadius: 10,
+                    background: "rgba(240,230,208,0.08)", border: "1px solid rgba(240,230,208,0.15)",
+                    color: "rgba(240,230,208,0.6)",
+                    fontFamily: "'Inter', sans-serif", fontSize: 13, cursor: "pointer",
+                  }}>
+                    Đóng
+                  </button>
+                  <button
+                    onClick={() => {
+                      closeBonusModal();
+                      const q = data?.quests.find((q) => q.key === bonusModal.key);
+                      if (q) handleBonusStart(q);
+                    }}
+                    style={{
+                      padding: "10px 20px", borderRadius: 10,
+                      background: "linear-gradient(135deg, #c9a84c, #e8c96a)",
+                      border: "none", color: "#080808",
+                      fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    }}
+                  >
+                    Thử lại
+                  </button>
+                </div>
               </>
             ) : (
               <>
@@ -483,7 +748,6 @@ function QuestRow({
       marginBottom: 5,
       opacity: done ? 0.72 : 1,
     }}>
-      {/* Mana badge */}
       <div style={{
         minWidth: 38, textAlign: "center",
         fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 700,
@@ -493,7 +757,6 @@ function QuestRow({
         <div style={{ fontSize: 9, fontWeight: 400, color: "rgba(240,230,208,0.28)", lineHeight: 1 }}>M</div>
       </div>
 
-      {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600,
@@ -504,7 +767,6 @@ function QuestRow({
         </div>
       </div>
 
-      {/* Actions */}
       <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
         {isAdmin && (
           <button
@@ -537,7 +799,7 @@ function QuestRow({
             fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 700, cursor: "pointer",
             whiteSpace: "nowrap",
           }}>
-            ⚡ Nhận
+            ⚡ Thực Hiện
           </button>
         ) : (
           <button onClick={onComplete} style={{

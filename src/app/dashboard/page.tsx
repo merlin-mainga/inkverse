@@ -1402,16 +1402,15 @@ async function handleSaveCharacterFromImage() {
 >
   <div
     style={{
-      display: "flex",
-      gap: 16,
-      alignItems: "flex-start",
+      display: "grid",
+      gridTemplateColumns: "260px 1fr 260px",
+      gap: "16px",
+      alignItems: "start",
       width: "100%",
     }}
   >
     <div
       style={{
-        width: 260,
-        flexShrink: 0,
         position: "sticky",
         top: 16,
       }}
@@ -5659,7 +5658,7 @@ async function handleSaveCharacterFromImage() {
         )}
       </div>
     </div>
-    <div style={{ width: 260, flexShrink: 0, position: "sticky", top: 16 }}>
+    <div style={{ position: "sticky", top: 16 }}>
       <ManaPanel />
     </div>
   </div>

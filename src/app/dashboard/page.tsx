@@ -1408,8 +1408,6 @@ async function handleSaveCharacterFromImage() {
       width: "100%",
     }}
   >
-    {/* Inner flex: left nav + main content */}
-    <div style={{ flex: 1, display: "flex", gap: 16, alignItems: "flex-start", minWidth: 0 }}>
     <div
       style={{
         width: 260,
@@ -5661,7 +5659,6 @@ async function handleSaveCharacterFromImage() {
         )}
       </div>
     </div>
-    </div> {/* close inner flex */}
     <div style={{ width: 260, flexShrink: 0, position: "sticky", top: 16 }}>
       <ManaPanel />
     </div>
